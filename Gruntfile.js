@@ -34,10 +34,10 @@ module.exports = function(grunt) {
         options: {
         },
         files: {
-          'tmp/default_options': ['test/fixtures/testing', 'test/fixtures/123'],
+          'tmp/inlinef': ['test/fixtures/inline1.html', 'test/fixtures/inline2.html'],
         },
       },
-      custom_options: {
+      /*custom_options: {
         options: {
           separator: ': ',
           punctuation: ' !!!',
@@ -45,7 +45,7 @@ module.exports = function(grunt) {
         files: {
           'tmp/custom_options': ['test/fixtures/testing', 'test/fixtures/123'],
         },
-      },
+      },*/
     },
 
     // Unit tests.
@@ -64,8 +64,8 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-nodeunit');
 
   // Whenever the "test" task is run, first clean the "tmp" dir, then run this
-  // plugin's task(s), then test the result.
-  grunt.registerTask('test', ['clean', 'notify_inline_css', 'nodeunit']);
+  // plugin's task(s), then test the result. 'nodeunit'
+  grunt.registerTask('test', ['notify_inline_css']);
 
   // By default, lint and run all tests.
   grunt.registerTask('default', ['jshint', 'test']);
