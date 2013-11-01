@@ -36,16 +36,7 @@ module.exports = function(grunt) {
         files: {
           'tmp/inlinef': ['test/fixtures/inline1.html', 'test/fixtures/inline2.html'],
         },
-      },
-      /*custom_options: {
-        options: {
-          separator: ': ',
-          punctuation: ' !!!',
-        },
-        files: {
-          'tmp/custom_options': ['test/fixtures/testing', 'test/fixtures/123'],
-        },
-      },*/
+      }
     },
 
     // Unit tests.
