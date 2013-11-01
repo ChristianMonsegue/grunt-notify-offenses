@@ -1,1 +1,11 @@
-Checking for inline css in file:
+Checking for inline css in file: test/fixtures/inline1.html
+Style attribute located at: L7 C4.
+Offending line: <p style='color: green;'>Hello</p>
+
+
+Checking for inline css in file: test/fixtures/inline2.html
+Style attribute located at: L7 C4.
+Offending line: <p style='color: green;'>Hello</p>
+
+Style attribute located at: L9 C9.
+Offending line: <form style='border: none;'></form>

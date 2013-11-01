@@ -49,7 +49,7 @@ module.exports = function(grunt) {
               column = lines[i].search(/style\s*=\s*(\"|\')[\S\s]*(\"|\')/);
               if(tag) {
                 var formatted_line = lines[i].replace(/\t|(\s*<)/, '');
-                out = out + "Style attribute located at: L" + (i+1) + " C" + (column+1) + "." + linefeed + " Offending line: <" + formatted_line + linefeed + linefeed;
+                out = out + "Style attribute located at: L" + (i+1) + " C" + (column+1) + "." + linefeed + "Offending line: <" + formatted_line + linefeed + linefeed;
               }
             }
           }
@@ -59,7 +59,7 @@ module.exports = function(grunt) {
         var output_file = '';
         grunt.log.write(linefeed);
         for(var k = 0; k < all_out.length; k++) {
-          var head = "Checking for inline css in file: " + paths[k] + linefeed;
+          var head = "Checking for inline css style in file: " + paths[k] + linefeed;
           grunt.log.write(head + all_out[k] + linefeed);
           output_file = output_file + head + all_out[k] + linefeed;
         }
