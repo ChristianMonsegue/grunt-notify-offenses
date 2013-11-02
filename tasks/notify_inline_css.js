@@ -17,62 +17,76 @@ module.exports = function( grunt ) {
     var linefeed = grunt.util.linefeed;
     // Merge task-specific and/or target-specific options with these defaults.
     var options = this.options({
-      punctuation: '.',
-      separator: ', '
+      reporter: {
+        tag: 'default',
+        file_output: true,
+        st_out: true
+      }
     });
 
     function defaultFindOffenses ( src ) {
-      var lines = src.split(linefeed),
-      file_out = "",
-      stout_out = "",
-      column,
-      column_offset,
-      offending_css,
-      formatted_line,
-      hr = '_______________________________________' + linefeed;
+      var multiple_outputs = { file_out: [], stout_out: [] };
+      for(var i = 0; i < src.length; i++) {
+        var lines = src[i].split(linefeed),
+        file_out = "",
+        stout_out = "",
+        column,
+        column_offset,
+        offending_css,
+        formatted_line,
+        hr = '_______________________________________' + linefeed;
 
-      for(var i = 0; i < lines.length; i++){
-        offending_css = ""; column = 0; column_offset = 0;
-        if(lines[i].length > 0){
-          var sliced_line = lines[i].slice(column);
-          while (offending_css !== null) {
-            offending_css = sliced_line.match(/style\s*=\s*(\"|\')[\S\s]*(\"|\')[\S\s]*>?[\S\s]*<?[\s\S]*>/i);
-            column = sliced_line.search(/style\s*=\s*(\"|\')[\S\s]*(\"|\')[\S\s]*>?[\S\s]*<?[\s\S]*>/i);
-            if(offending_css !== null) {
-              file_out = file_out + ("->").yellow.bold + "Style attribute located at: " + ("L" + (i + 1)).bold.white + (" C" + (column + column_offset + 1)).bold.white + "." + linefeed;
-              stout_out = stout_out + "->" + "Style attribute located at: " + "L" + (i + 1) + " C" + (column + column_offset + 1) + "." + linefeed;
+        for(var j = 0; j < lines.length; j++){
+          offending_css = ""; column = 0; column_offset = 0;
+          if(lines[j].length > 0){
+            var sliced_line = lines[j].slice(column);
+            while (offending_css !== null) {
+              offending_css = sliced_line.match(/style\s*=\s*(\"|\')[\S\s]*(\"|\')[\S\s]*>?[\S\s]*<?[\s\S]*>/i);
+              column = sliced_line.search(/style\s*=\s*(\"|\')[\S\s]*(\"|\')[\S\s]*>?[\S\s]*<?[\s\S]*>/i);
+              if(offending_css !== null) {
+                stout_out = stout_out + ("->").yellow.bold + "Style attribute located at: " + ("L" + (j + 1)).bold.white + (" C" + (column + column_offset + 1)).bold.white + "." + linefeed;
+                file_out = file_out + "->" + "Style attribute located at: " + "L" + (j + 1) + " C" + (column + column_offset + 1) + "." + linefeed;
+              }
+              sliced_line = lines[j].slice(column + column_offset + 1);
+              column_offset = column_offset + column + 1;
             }
-            sliced_line = lines[i].slice(column + column_offset + 1);
-            column_offset = column_offset + column + 1;
+          }
+          if(column_offset > 0) {
+            stout_out = stout_out + hr + ("Offending line: ").green.bold  + lines[j] + linefeed + linefeed;
+            file_out = file_out + hr + "Offending line: " + lines[j] + linefeed + linefeed;
           }
         }
-        if(column_offset > 0) {
-          file_out = file_out + hr + ("Offending line: ").green.bold  + lines[i] + linefeed + linefeed;
-          stout_out = stout_out + hr + "Offending line: " + lines[i] + linefeed + linefeed;
-        }
-      }
-      return { file_out: file_out, stout_out: stout_out };
+        multiple_outputs.file_out.push(file_out);
+        multiple_outputs.stout_out.push(stout_out);
+    }
+      return multiple_outputs;
     }
 
-    function outputLog ( src, dest, data ) {
+    function outputLog ( src, dest, to_stout_data, to_file_data ) {
       var output_file = '';
-      grunt.log.write(linefeed);
-      for(var k = 0; k < data.length; k++) {
-        var header = "[Checking for inline css style in file: " + src[k] + "]" + linefeed;
-        output_file = output_file + header + data[k]['stout_out'] + linefeed;
+      //grunt.log.write(linefeed + " " + to_file_data + " " + src.length);
+
+      for(var i = 0; i < src.length; i++) {
+        var header = "[Checking for inline css style in file: " + src[i] + "]" + linefeed;
+        if(to_file_data !== undefined) {
+          output_file = output_file + header + to_file_data[i] + linefeed;
+        }
         header = header.red.bold;
-        grunt.log.write(header + data[k]['file_out'] + linefeed);
+        if(to_stout_data !== undefined) {
+          grunt.log.write(header + to_stout_data[i] + linefeed);
+        }
       }
-      grunt.file.write(dest.dest, output_file);
-      var creation_notify = 'File "' + dest.dest + '" created.';
-      grunt.log.writeln(creation_notify.white.bold);
+      if(to_file_data !== undefined) {
+        grunt.file.write(dest.dest, output_file);
+        grunt.log.writeln(('File "' + dest.dest + '" created.').white.bold);
+      }
     }
 
     this.files.forEach( function ( f ) {
       var paths = [];
       var src = f.src.filter( function ( filepath ) {
-          if (!grunt.file.exists(filepath)) {
-            grunt.file.write('Source file "' + filepath + '" not found.');
+          if (!grunt.file.isFile(filepath)) {
+            grunt.log.write('Source file "' + filepath + '" not found.');
             return false;
           } else {
             return true;
@@ -81,11 +95,21 @@ module.exports = function( grunt ) {
           paths.push(filepath);
           return grunt.file.read(filepath);
         });
-        var all_out = [];
-        for(var j = 0; j < src.length; j++){
-          all_out.push(defaultFindOffenses(src[j]));
+        if(options.reporter.st_out === undefined){
+          options.reporter.st_out = true;
         }
-        outputLog (paths, f, all_out);
+        if(options.reporter.file_out === undefined){
+          options.reporter.file_out = true;
+        }
+        grunt.log.writeln(options.reporter.st_out.length);
+        if(options.reporter.tag === (undefined || 'default')){
+          var mult_out = defaultFindOffenses(src);
+          outputLog (paths, f,
+                     options.reporter.st_out === true && options.reporter.st_out.length === undefined ? mult_out.stout_out : undefined,
+                     options.reporter.file_out === true && options.reporter.file_out.length === undefined ? mult_out.file_out : undefined);
+        } else {
+          grunt.log.write('No reporters yet');
+        }
       });
   });
 

@@ -32,9 +32,12 @@ module.exports = function(grunt) {
     notify_inline_css: {
       default_options: {
         options: {
+          reporter: {
+            tag: 'default',
+          }
         },
         files: {
-          'tmp/inlinef': ['test/fixtures/inline1.html', 'test/fixtures/inline2.html'],
+          'tmp/inlinef': ['test/fixtures/inline1.html', 'test/fixtures/inlinye2.html'],
         },
       }
     },
