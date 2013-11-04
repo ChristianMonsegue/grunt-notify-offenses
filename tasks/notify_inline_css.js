@@ -14,7 +14,11 @@ module.exports = function( grunt ) {
   // creation: http://gruntjs.com/creating-tasks
 
   grunt.registerMultiTask('notify_inline_css', 'Searches through a list of files and notifies on all declarative inline css.', function() {
+
     var linefeed = grunt.util.linefeed;
+    var block_space = linefeed + linefeed + linefeed;
+    var hr = "______________________________________________________\n";
+
     // Merge task-specific and/or target-specific options with these defaults.
     var options = this.options({
       reporter: {
@@ -33,8 +37,7 @@ module.exports = function( grunt ) {
         column,
         column_offset,
         offending_css,
-        formatted_line,
-        hr = '_______________________________________' + linefeed;
+        formatted_line;
 
         for(var j = 0; j < lines.length; j++){
           offending_css = ""; column = 0; column_offset = 0;
@@ -44,16 +47,16 @@ module.exports = function( grunt ) {
               offending_css = sliced_line.match(/style\s*=\s*(\"|\')[\S\s]*(\"|\')[\S\s]*>?[\S\s]*<?[\s\S]*>/i);
               column = sliced_line.search(/style\s*=\s*(\"|\')[\S\s]*(\"|\')[\S\s]*>?[\S\s]*<?[\s\S]*>/i);
               if(offending_css !== null) {
-                stout_out = stout_out + ("->").yellow.bold + "Style attribute located at: " + ("L" + (j + 1)).bold.white + (" C" + (column + column_offset + 1)).bold.white + "." + linefeed;
-                file_out = file_out + "->" + "Style attribute located at: " + "L" + (j + 1) + " C" + (column + column_offset + 1) + "." + linefeed;
+                stout_out = stout_out + ("-> ").yellow.bold + "Style attribute located at: " + ("L" + (j + 1)).bold.white + (" C" + (column + column_offset + 1)).bold.white + "." + linefeed;
+                file_out = file_out + "-> " + "Style attribute located at: " + "L" + (j + 1) + " C" + (column + column_offset + 1) + "." + linefeed;
               }
               sliced_line = lines[j].slice(column + column_offset + 1);
               column_offset = column_offset + column + 1;
             }
           }
           if(column_offset > 0) {
-            stout_out = stout_out + hr + ("Offending line: ").green.bold  + lines[j] + linefeed + linefeed;
-            file_out = file_out + hr + "Offending line: " + lines[j] + linefeed + linefeed;
+            stout_out = stout_out + hr + ("Offending line: ").green.bold  + lines[j] + block_space;
+            file_out = file_out + hr + "Offending line: " + lines[j] + block_space;
           }
         }
         multiple_outputs.file_out.push(file_out);
@@ -67,7 +70,7 @@ module.exports = function( grunt ) {
       //grunt.log.write(linefeed + " " + to_file_data + " " + src.length);
 
       for(var i = 0; i < src.length; i++) {
-        var header = "[Checking for inline css style in file: " + src[i] + "]" + linefeed;
+        var header = "[Checking for inline css styles in file: " + src[i] + "]" + block_space;
         if(to_file_data !== undefined) {
           output_file = output_file + header + to_file_data[i] + linefeed;
         }
@@ -101,8 +104,7 @@ module.exports = function( grunt ) {
         if(options.reporter.file_out === undefined){
           options.reporter.file_out = true;
         }
-        grunt.log.writeln(options.reporter.st_out.length);
-        if(options.reporter.tag === (undefined || 'default')){
+        if(options.reporter.tag === (undefined || 'default')) {
           var mult_out = defaultFindOffenses(src);
           outputLog (paths, f,
                      options.reporter.st_out === true && options.reporter.st_out.length === undefined ? mult_out.stout_out : undefined,
