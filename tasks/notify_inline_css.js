@@ -13,7 +13,7 @@ module.exports = function( grunt ) {
   // Please see the Grunt documentation for more information regarding task
   // creation: http://gruntjs.com/creating-tasks
 
-  grunt.registerMultiTask('notify_inline_css', 'Searches through a list of files and notifies on all declarative inline css.', function() {
+  grunt.registerMultiTask('notify_inline_css', 'Searches through a list of files and notifies on all declarative inline code.', function() {
 
     // Merge task-specific and/or target-specific options with these defaults.
     var options = this.options({
@@ -30,10 +30,10 @@ module.exports = function( grunt ) {
       this.type = type;
       this.column = column;
     }
-    Column.prototype.getType = function() {
+    Column.prototype.getColumnType = function() {
       return this.type;
     };
-    Column.prototype.getColumn = function() {
+    Column.prototype.getColumnNumber = function() {
       return this.column;
     };
 
@@ -43,12 +43,13 @@ module.exports = function( grunt ) {
       [
         {
           type: 'CSS',
-          pattern: /style\s*=\s*(\"|\')[\s\ta-z0-9\-\:\;{}\\\/\(\)\+\=\&\%\#\@\!\$_\"\']*(\"|\')/gi
+          pattern: /style[\s\t]*=[\s\t]*(\"|\')[\s\ta-z0-9\-\:\;{}\\\/\(\)\+\=\&\%\#\@\!\,\$_\"\']*(\"|\')/gi
         },
         {
           type: 'Align',
-          pattern: /align\s*=\s*(\"|\')[\s\ta-z0-9\-\:\;{}\\\/\(\)\+\=\&\%\#\@\!\$_\"\']*(\"|\')/gi
+          pattern: /align[\s\t]*=[\s\t]*(\"|\')[\s\ta-z0-9\-\:\;{}\\\/\(\)\+\=\&\%\#\@\!\,\$_\"\']*(\"|\')/gi
         }
+
       ];
 
       function doesTypeExist (type) {
@@ -126,14 +127,19 @@ module.exports = function( grunt ) {
     MetaDataFile.prototype.getFilePath = function() {
       return this.path;
     };
-    MetaDataFile.prototype.getFileOffenses = function() {
-      return this.offenses;
+    MetaDataFile.prototype.getOffensesLength = function() {
+      return this.offenses.length;
     };
-     MetaDataFile.prototype.getFileOffense = function(index) {
+    MetaDataFile.prototype.getOffense = function( index ) {
       return this.offenses[index];
     };
+    MetaDataFile.prototype.addOffense = function( offense ) {
+      return this.offenses.push(offense);
+    };
 
-    function Offense (line, line_num, columns) {
+    /*Class denoting each Offense found in a file.
+    */
+    function Offense ( line, line_num, columns ) {
       this.line = line;
       this.line_num = line_num;
       this.columns = columns;
@@ -147,7 +153,12 @@ module.exports = function( grunt ) {
     Offense.prototype.getColumns = function() {
       return this.columns;
     };
-
+    Offense.prototype.getColumn = function( index ) {
+      return this.columns[index];
+    };
+    Offense.prototype.getColumnsLength = function( ) {
+      return this.columns.length;
+    };
 
     var Finder = (function () {
 
@@ -161,15 +172,15 @@ module.exports = function( grunt ) {
         var files_metadata = files.map(function ( file ) {
           var lines = file.data.split(linefeed),
           offending_columns;
-          var current_file = {path: file.path, offenses: []};
+          var current_file = new MetaDataFile(file.path);
           for(var j in lines){
             if(lines[j].length > 0){
               offending_columns =
                 strategies.offendingColumnsForAllPatterns(lines[j]);
               if(offending_columns.length > 0){
-                current_file.offenses.push({line: lines[j],
-                                            line_num: (+j) + 1,
-                                            columns: offending_columns});
+                current_file.addOffense(new Offense(lines[j].trim(),
+                                                    (+j) + 1,
+                                                    offending_columns));
               } } }
           return current_file;
         });
@@ -181,29 +192,11 @@ module.exports = function( grunt ) {
         metadata = findOffenses (src, strategies);
         return true;
       },
-      getListOfFiles: function () {
-        return metadata;
-      },
-      getNumberOfFiles: function () {
+      getMetaDataLength: function () {
         return metadata.length;
       },
-      getOffenses: function ( file_num ) {
-        return getMetaFile(file_num).offenses;
-      },
-      getNumberOfOffenses: function ( file_num ) {
-        return getMetaFile(file_num).offenses.length;
-      },
-      getFilePath: function ( file_num ) {
-        return getMetaFile(file_num).path;
-      },
-      getFileLine: function ( offenses, index ) {
-        return offenses[index].line;
-      },
-      getFileLineNumber: function ( offenses, index ) {
-        return offenses[index].line_num;
-      },
-      getFileColumns: function ( offenses, index ) {
-        return offenses[index].columns;
+      getMetaDataFile: function ( index ) {
+        return metadata[index];
       }
     };
 
@@ -215,66 +208,76 @@ module.exports = function( grunt ) {
 
       var parsed_files = null;
 
-      function parseFileInPlainText ( finder, file, toFile ) {
-        var offenses = finder.getOffenses(file), 
-            line,
-            line_num,
-            columns,
-            arrow_text,
+      function parseLocationToPlainText ( offense, line_num, toFile ) {
+        var arrow_text,
             location_text,
-            output = '';
-        for (var j in offenses) {
-          line = finder.getFileLine(offenses, j);
-          line_num = finder.getFileLineNumber(offenses, j);
-          columns = finder.getFileColumns(offenses, j);
-          for(var i = 0; i < columns.length; i++){
+            column,
+            output = '',
+            it = 0;
+        while (it < offense.getColumnsLength()){
+          column = offense.getColumn(it);
             arrow_text = toFile ? '-> ' : ('-> ').yellow.bold;
             location_text = toFile ?
-                            'L' + line_num + ' C' + columns[i].getColumn() :
-                            ('L' + line_num + ' C' +columns[i].getColumn()).bold.white;
-            output = output + arrow_text + columns[i].getType() + ' attribute located at: ' + location_text + '.' + linefeed;
-          }
-          output = toFile ?
-                    output + hr + 'Offending line: ' + line + block_space :
-                    output+ hr + ('Offending line: ').red.bold  + line +
-                    block_space;
+                            'L' + line_num + ' C' + column.getColumnNumber() :
+                            ('L' + line_num + ' C' + column.getColumnNumber()).bold.white;
+            output = output + arrow_text + column.getColumnType() + ' attribute located at: ' + location_text + '.' + linefeed;
+          it++;
         }
         return output;
       }
 
-      function parseAllInPlainText ( finder, toFile ) {
-        var metadata_length = finder.getNumberOfFiles(),
+      function parseFileToPlainText ( finder, metadata_file, toFile ) {
+        var offense,
+            line,
+            line_num,
+            output = '',
+            it = 0;
+        while (it < metadata_file.getOffensesLength()) {
+          offense = metadata_file.getOffense(it);
+          line = offense.getLine();
+          line_num = offense.getLineNumber();
+          output = output + parseLocationToPlainText(offense,line_num, toFile);
+          output = toFile ?
+                    output + hr + 'Offending line: ' + line + block_space :
+                    output+ hr + ('Offending line: ').red.bold  + line +
+                    block_space;
+          it++;
+        }
+        return output;
+      }
+
+      function parseAllToPlainText ( finder, toFile ) {
+        var metadata_file,
             output,
             check_file_text,
-            outputs = [];
-        for (var i = 0; i < metadata_length; i++) {
+            outputs = [],
+            it = 0;
+        while(it < finder.getMetaDataLength()) {
+          metadata_file = finder.getMetaDataFile(it);
           check_file_text = toFile ?
                             '[Checking for offenses in file: ' +
-                            finder.getFilePath(i) + ']' :
+                            metadata_file.getFilePath() + ']' :
                             ('[Checking for offenses in file: ' +
-                             finder.getFilePath(i) + ']').magenta.bold;
+                             metadata_file.getFilePath() + ']').magenta.bold;
           output = linefeed + check_file_text + block_space;
-          if(finder.getNumberOfOffenses(i) === 0){
+          if(metadata_file.getOffensesLength() === 0){
             output = toFile ?
                     output + "No offenses detected!" + block_space :
                     output + "No offenses detected!".green.inverse +
                     block_space;
           }else{
-            output = output + parseFileInPlainText( finder, i, toFile );
+            output = output + parseFileToPlainText( finder, metadata_file, toFile );
           }
           outputs.push(output);
+          it++;
         }
         return outputs;
       }
 
       return {
         parseOffensesToPlainText: function ( finder, toFile ) {
-          parsed_files = parseAllInPlainText( finder, toFile );
+          parsed_files = parseAllToPlainText( finder, toFile );
           return true;
-        },
-        getParsedFiles: function () {
-          //grunt.log.writeln(parsed_files[0]);
-          return parsed_files;
         },
         getParsedFile: function ( file_index ) {
           return parsed_files[file_index];
@@ -282,9 +285,6 @@ module.exports = function( grunt ) {
         getParsedFilesLength: function () {
           if (parsed_files !== null) { return parsed_files.length; }
           else { return -1; }
-        },
-        getParsedFileIndex: function ( file ) {
-          return parsed_files.indexOf( file );
         }
       };
     })();
@@ -295,15 +295,15 @@ module.exports = function( grunt ) {
       function outputOffenses ( dest, parser, toFile ) {
         var output_file = '',
             parsed_file,
-            iterator = 0;
-        while (iterator < parser.getParsedFilesLength()) {
-          parsed_file = parser.getParsedFile(iterator);
+            it = 0;
+        while (it < parser.getParsedFilesLength()) {
+          parsed_file = parser.getParsedFile(it);
           if(toFile) {
             output_file = output_file + parsed_file;
           } else {
             grunt.log.write(parsed_file); 
           }
-          iterator++; 
+          it++; 
         }
         if(toFile) {
           grunt.file.write(dest.dest, output_file);

@@ -1,0 +1,222 @@
+<table style="width: 100%;">
+    <tbody>
+        
+         <tr ng-show="claim.showDetails" >
+            <td>
+                <table style="width: 100%; background: rgb( 254, 254, 254 );border-bottom: 2px solid rgb( 243, 243, 243 );">
+                    <tbody>
+                        <tr>
+                            <td style="width: 30px; padding: 5px;">TOB</td>
+                            <td style="padding: 5px;">
+                                <input type="text" id="typeOfBill" ui-select2="TypeOfBill" ng-model="claim.typeOfBill" ng-disabled = "viewonly" />
+                            </td>
+                            <td style="width: 80px; text-align: right;  padding: 5px;">Claim Status</td>
+                            <td style="padding: 5px;">
+                                <input 
+                                    id          = "claimStatus" 
+                                    name        = "claimStatus" 
+                                    type        = "text" 
+                                    value       = "{{claim.claimStatus}}"
+                                    style       = "width: 75px;" 
+                                    ui-select2  = "claimStatuses" 
+                                    ng-model    = "claim.claimStatusSelect2"
+                                    ng-disabled = "viewonly" />
+                            </td>
+                            <td style="text-align: right;  padding: 5px;">ICN Number</td>
+                            <td style="padding: 5px;">
+                                <input data-k-alpha-numeric-input
+                                    id          = "claimICN_{{$index + 1}}" 
+                                    type        = "text" 
+                                    ng-model    = "claim.ICNNumber"
+                                    ng-disabled = "viewonly" />
+                            </td>
+                            <td style="width: 275px; padding: 5px;">
+                                <input 
+                                    id          = "remarkCodes" 
+                                    name        = "remarkCodes" 
+                                    type        = "text" 
+                                    style       = "width: 270px;" 
+                                    ui-select2  = "remarkCodesTags" 
+                                    ng-model    = "claim.remarkCodesSelect2"
+                                    ng-disabled = "viewonly" />
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td> 
+        </tr>
+       <tr ng-show = "claim.showDetails">
+            <td>
+                <table style="width: 100%;background: rgb( 254, 254, 254 );border-bottom: 2px solid rgb( 243, 243, 243 );">
+                    <tr>
+                        <td style="padding: 5px; background: rgb( 234, 234, 234 );">
+                            <input 
+                                type        = "button" 
+                                ng-click    = "addClaimAdjustment( )" 
+                                value       = "Add Claim Adjustment"  
+                                ng-disabled = "viewonly"
+                                ng-show       = "!viewonly" />
+                        </td>
+                        <td ng-show="claim.adjustments.length > 0">
+                            <table style="width: 100%; background: rgb( 234, 234, 234 );">
+                                <tbody>
+                                    <tr ng-repeat="adjustment in claim.adjustments " ng-class-even="'even'" ng-class-odd="'odd'">
+	                                    <td ng-show="adjustment.active">
+	                                    	<table>
+	                                    		<tr>
+			                                        <td style="width: 110px;  padding: 5px;">Claim Adjustment</td>                                        
+			                                        <td style="width: 100px; padding: 5px;">
+			                                            <input data-k-currency-input
+			                                                class       = "input-small" 
+			                                                type        = "text" 
+			                                                id          = "claimAdjustmentAmount_{{$index + 1}}" 
+			                                                ng-model    = "adjustment.postAdjustment" 
+			                                                ng-disabled = "viewonly" />
+			                                        </td>                                    
+													<td style="width: 150px; padding: 5px; text-align: right;">Adjustment Group Code</td>
+													 <td style="width: 100px; padding: 5px;">
+														<input type="text" ui-select2="AdjustmentGroupCode" name="adjustmentGroupCode" id="adjustmentGroupCode" ng-model="adjustment.adjustmentGroupCode" ng-disabled="viewonly" />
+            										</td> 
+                                                    <td style="width: 100px; padding: 5px; text-align: right;">ADJ Reason</td>                                        
+                                                    <td style="width: 100px; padding: 5px;">
+                                                        <input 
+                                                            type        = "text" 
+                                                            style       = "width:75px;"
+                                                            childType   = "adjustments"
+                                                            index       = "{{$index}}"
+                                                            value       = "{{adjustment.adjustmentCode}}"
+                                                            ui-select2  = "adjustmentCodes" 
+                                                            ng-model    = "adjustment.adjustmentCodeSelect2" 
+                                                            ng-disabled = "viewonly" />
+            
+                                                    </td> 
+                                                    <td style="padding: 5px;">
+			                                            <i ng-show="!viewonly" class="icon-minus-sign" ng-click="removeClaimAdjustment( adjustment )" /> 
+			                                        </td>
+												</tr>
+											</table>
+										</td>
+									</tr>	
+                                </tbody>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+        <tr ng-show = "claim.showDetails">
+            <td>
+                <table class="lineitems" style="width: 100%;" cellspacing="0" cellpadding="0">
+                    <thead>
+                        <tr>
+                            <th style="width: 75px;">Service Date</th>
+                            <th style="width: 150px; text-overflow:ellipsis; white-space: nowrap;">Description</th>
+                            <th style="width: 75px;">Charge</th>
+							<th style="width: 75px;">Contractual Adj.</th>
+                            <th style="width: 75px;">Payment</th>
+							<th style="width: 90px;">Remittance Adjustment</th>
+                            <th style="width: 60px;">Post-Adjustment</th>
+							<th style="width: 80px;">Adjustment Group Code</th>
+                            <th style="width: 70px;">ADJ Reason</th>
+                            <th style="width: 75px;">Remark Code</th>
+							<th style="width: 75px;">Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+
+	            		<tr ng-repeat="lineItem in claim.lineItems" ng-class-even="'even'" ng-class-odd="'odd'">
+                            <td colspan="5">
+                                <div class="even">
+                                    <table cellpadding="0" cellspacing="0">
+                                        <tr>
+                	                        <td style="width: 75px;">{{lineItem.serviceDate}}</td>
+                	                        <td style="width: 150px;">{{lineItem.description}}</td>
+                	                        <td style="width: 75px;">{{lineItem.charge | currency : "" }}</td>
+                							<td style="width: 75px;"><div tooltip="Allowed: {{lineItem.charge}}">{{lineItem.contractualAdjustment | currency : "" }}</div></td>
+                							<td style="width: 75px;" >
+                	                            <input data-k-currency-input 
+                	                                class       = "input-mini" 
+                	                                type        = "text" 
+                	                                ng-model    = "lineItem.payment" 
+                	                                ng-change   = "updateAdjustment( true )" 
+                	                                ng-disabled = "viewonly" />
+
+                	                        </td>
+                                        </tr>
+                                    </table>
+                               </div>
+                            </td>
+
+							<td colspan="5">
+								<div ng-repeat="adjustment in lineItem.adjustments | orderBy:'position'" ng-class-even="'odd'" ng-class-odd="'even'">
+								<table cellpadding="0" cellspacing="0">
+									<tr ng-show="adjustment.active">
+			                            <td style="white-space: nowrap;">
+			                                <input data-k-currency-input 
+			                                    class       = "input-mini" 
+			                                    type        = "text" 
+			                                    ng-model    = "adjustment.remittanceAdjustment" 
+			                                    ng-disabled = "viewonly" />
+										<i 
+			                                type        = "button" 
+			                                ng-click    = "addClaimLineItemAdjustment( )" 
+			                                class       = "icon-plus-sign"
+			                                ng-show     = "!viewonly && $index===0" />
+										<i 
+			                                type        = "button" 
+			                                ng-click    = "removeClaimLineItemAdjustment( adjustment )" 
+			                                class       = "icon-minus-sign"
+			                                ng-show     = "!viewonly && $index>0" />
+			                            </td>
+			                            <td>
+			                                <input data-k-currency-input
+			                                    class       = "input-mini" 
+			                                    type        = "text" 
+			                                    ng-model    = "adjustment.postAdjustment" 
+			                                    ng-disabled = "viewonly" />
+			                            </td>
+			                            <td>
+                                            <input
+                                                type        = "text"
+                                                name        = "adjustmentGroupCode" 
+                                                id          = "adjustmentGroupCode"
+                                                ui-select2  = "AdjustmentGroupCode"
+                                                ng-model    = "adjustment.adjustmentGroupCode" 
+                                                ng-change   = "updateAdjustment( false )" 
+                                                ng-disabled = "viewonly" />
+			                            </td>
+										<td>
+			                                <input 
+			                                    type        = "text" 
+			                                    style       = "width:75px;"
+			                                    childType   = "lineItems"
+			                                    index       = "{{$index}}" 
+                                                value       = "{{adjustment.adjustmentCode}}" 
+			                                    ui-select2  = "adjustmentCodes" 
+			                                    ng-model    = "adjustment.adjustmentCodeSelect2" 
+			                                    ng-disabled = "viewonly"
+												ng-change   = "updateAdjustment( false )" />
+			                            </td>
+			                            <td>
+			                                <input 
+			                                    type        = "text" 
+			                                    style       = "width:75px;"
+                                                childType   = "remarkCode"
+			                                    index       = "{{$index}}" 
+                                                value       = "{{adjustment.remarkCode}}"
+			                                    ui-select2  = "remarkCodes" 
+			                                    ng-model    = "adjustment.remarkCode" 
+			                                    ng-disabled = "viewonly" />
+			                            </td>
+									</tr>
+								</table>
+								</div>
+							</td>	
+							<td><div tooltip="{{remittance.remittanceStatus == 1 ? '' : 'Previous'}} Payments and Adjustments Total: {{lineItem.charge-lineItem.previousBalance | currency : ''}}" style="margin-top: 5px;">{{lineItem.balance | currency : "" }}</div></td>
+        				</tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>    
+    </tbody>
+</table>
