@@ -65,7 +65,7 @@ module.exports = function( grunt ) {
       var metadata = null;
 
     return {
-      findOffenses: function ( src ){
+      defaultfindOffenses: function ( src ){
         metadata = findOffenses (src);
         return true;
       },
@@ -97,15 +97,21 @@ module.exports = function( grunt ) {
       var hr = '______________________________________________________\n';
 
       function parseFileOffenses ( finder, file, toFile ) {
-        var offenses_length = finder.getNumberOfOffenses(file), line, line_num, columns, output = '';
+        var offenses_length = finder.getNumberOfOffenses(file), 
+            line,
+            line_num,
+            columns,
+            output = '';
         for (var j = 0; j < offenses_length; j++) {
           line = finder.getFileLine(file, j);
           line_num = finder.getFileLineNumber(file, j);
           columns = finder.getFileColumns(file, j);
           for(var i = 0; i < columns.length; i++){
             output = toFile ?
-            output + '-> ' + 'Style attribute located at: ' + 'L' + line_num + ' C' + columns[i] + '.' + linefeed :
-            output + ('-> ').yellow.bold + 'Style attribute located at: ' + ('L' + line_num).bold.white + (' C' + columns[i]).bold.white + '.' + linefeed;
+            output + '-> ' + 'Style attribute located at: ' + 'L' +
+            line_num + ' C' + columns[i] + '.' + linefeed :
+            output + ('-> ').yellow.bold + 'Style attribute located at: ' +
+            ('L' + line_num + ' C' + columns[i]).bold.white + '.' + linefeed;
           }
           output = toFile ?
           output + hr + 'Offending line: ' + line + block_space :
@@ -115,7 +121,8 @@ module.exports = function( grunt ) {
       }
 
       function parseAllOffenses ( finder, toFile ) {
-        var metadata_length = finder.getNumberOfFiles(), outputs = [];
+        var metadata_length = finder.getNumberOfFiles(),
+            outputs = [];
         for (var i = 0; i < metadata_length; i++) {
           var output = toFile ?
           linefeed + '[Checking for inline css styles in file: ' + finder.getFilePath(i) + ']' + block_space :
@@ -132,23 +139,35 @@ module.exports = function( grunt ) {
         return outputs;
       }
 
+      var parsed_files = null;
+
       return {
         defaultParseOffenses: function ( finder, toFile ) {
-          return parseAllOffenses ( finder, toFile );
+          parsed_files = parseAllOffenses ( finder, toFile );
+          return true;
+        },
+        getParsedFile: function ( file_index ) {
+          return parsed_files[file_index];
+        },
+        getParsedFilesLength: function () {
+          if (parsed_files !== null) { return parsed_files.length; }
+          else { return -1; }
         }
       };
-
     })();
 
     /*Takes the parsed results array that represents each input file and outputs them either to standard output or to a specified output file from the options.*/
     var Reporter = (function () {
 
-      function outputOffenses ( dest, parsed_files, toFile ) {
-        var output_file = '';
-        for(var i = 0; i < parsed_files.length; i++) {
-          if(toFile){ output_file = output_file + parsed_files[i];
+      function outputOffenses ( dest, parser, toFile ) {
+        var output_file = '',
+            parsed_file,
+            parsed_files_length = parser.getParsedFilesLength();
+        for(var i = 0; i < parsed_files_length; i++) {
+          parsed_file = parser.getParsedFile(i);
+          if(toFile){ output_file = output_file + parsed_file;
           } else { 
-            grunt.log.write(parsed_files[i]); 
+            grunt.log.write(parsed_file); 
           } }
         if(toFile) {
           grunt.file.write(dest.dest, output_file);
@@ -160,8 +179,8 @@ module.exports = function( grunt ) {
         customOutputOffenses: function ( customOutput ) {
           customOutput();
         },
-        defaultOutputOffenses: function ( dest, parsed_files, toFile ) {
-          outputOffenses (dest, parsed_files, toFile);
+        defaultOutputOffenses: function ( dest, parser, toFile ) {
+          outputOffenses (dest, parser, toFile);
         }
       };
 
@@ -183,13 +202,13 @@ module.exports = function( grunt ) {
             options.reporter.to_file = true;
           }
           if(options.reporter.tag === (undefined || 'default')) {
-            Finder.findOffenses(files);
-            var stout_print = Parser.defaultParseOffenses(Finder);
-            Reporter.defaultOutputOffenses (file_block, stout_print);
-            if(options.reporter.to_file === true && options.reporter.to_file.length === undefined) {
+            Finder.defaultfindOffenses(files);
+            Parser.defaultParseOffenses(Finder);
+            Reporter.defaultOutputOffenses(file_block, Parser);
+            /*if(options.reporter.to_file === true && options.reporter.to_file.length === undefined) {
               var file_print = Parser.defaultParseOffenses(Finder, true);
               Reporter.defaultOutputOffenses (file_block, file_print, true);
-            }
+            }*/
           } else {
             Reporter.customOutputOffenses (function() {grunt.log.writeln('hi');});
           }
