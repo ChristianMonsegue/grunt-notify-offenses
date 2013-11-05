@@ -37,7 +37,8 @@ module.exports = function(grunt) {
           }
         },
         files: {
-          'tmp/inlinef': ['test/fixtures/inline1.html', 'test/fixtures/infline2.html'],
+          'tmp/inlinef': ['test/fixtures/inline1.html'],
+          'tmp/inlinet': ['test/fixtures/inline2.html', 'test/fixtures/noInline1.html']
         },
       }
     },

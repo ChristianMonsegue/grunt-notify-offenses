@@ -14,150 +14,185 @@ module.exports = function( grunt ) {
   // creation: http://gruntjs.com/creating-tasks
 
   grunt.registerMultiTask('notify_inline_css', 'Searches through a list of files and notifies on all declarative inline css.', function() {
+
+    // Merge task-specific and/or target-specific options with these defaults.
+    var options = this.options({
+      reporter: {
+        tag: 'default',
+        to_file: true,
+      }
+    });
+
     var linefeed = grunt.util.linefeed;
     var block_space = linefeed + linefeed + linefeed;
 
-    var InlineCSSOffense = (function () {
-      var hr = '______________________________________________________\n';
+    /*Given a list of input files, it takes each file and finds all the metadata about the offenses. The search criteria can be extended to look for more than css style offenses (ex: SQL queries, inline javascript, etc). This will be used later on by the parser which interprets this data.
+      Parsed Metadata:
+        -path of file
+        -offending line
+        -offending line number
+        -offending columns of the line
+    */
+    var Finder = (function () {
 
-      function findOffendingColumns (str) {
-        var regex=/style\s*=\s*(\"|\')[\sa-z0-9\-\:\;{}\(\)\+\=\&\%\#\@\!\$_]*(\"|\')>/gi, result, indices = [];
-        while ( (result = regex.exec(str)) ) {
-            indices.push(result.index);
+      function findOffendingCSSColumns ( line ) {
+        var style_pattern = /style\s*=\s*(\"|\')[\s\ta-z0-9\-\:\;{}\(\)\+\=\&\%\#\@\!\$_\"\']*(\"|\')>/gi, result, columns = [];
+        while ( (result = style_pattern.exec(line)) ) {
+            columns.push(result.index + 1);
         }
-        return indices;
+        return columns;
+      }
+      function getMetaFile ( file_num ) {
+        return metadata[file_num];
       }
 
-      function logOffenses (offense, line, columns, out, isFile) {
-        var output = out;
-        for (var i = 0; i < columns.length; i++) {
-          output = isFile ?
-          output + '-> ' + 'Style attribute located at: ' + 'L' + (line + 1) + ' C' + (columns[i] + 1) + '.' + linefeed :
-          output + ('-> ').yellow.bold + 'Style attribute located at: ' + ('L' + (line + 1)).bold.white + (' C' + (columns[i] + 1)).bold.white + '.' + linefeed;
-        }
-        output = isFile ?
-        output + hr + 'Offending line: ' + offense + block_space :
-        output + hr + ('Offending line: ').green.bold  + offense + block_space;
-
-        return output;
-      }
-
-      function findOffenses ( src ) {
-        var multiple_outputs = { file_out: [], stout_out: [] };
-        for(var i = 0; i < src.length; i++) {
-          var lines = src[i].split(linefeed),
-          offending_columns,
-          file_out = '',
-          stout_out = '';
-
+      function findOffenses ( files ) {
+        var files_metadata = files.map(function ( file ) {
+          var lines = file.data.split(linefeed),
+          offending_columns;
+          var current_file = {path: file.path, offenses: []};
           for(var j = 0; j < lines.length; j++){
             if(lines[j].length > 0){
-              offending_columns = findOffendingColumns(lines[j]);
+              offending_columns = findOffendingCSSColumns(lines[j]);
               if(offending_columns.length > 0){
-                stout_out = logOffenses(lines[j], j, offending_columns, stout_out, false);
-                file_out = logOffenses(lines[j], j, offending_columns, file_out, true);
-              }
-            }
-          }
-          multiple_outputs.file_out.push(file_out);
-          multiple_outputs.stout_out.push(stout_out);
-        }
-        return multiple_outputs;
+                current_file.offenses.push({line: lines[j], line_num: j + 1, columns: offending_columns});
+              } } }
+          return current_file;
+        });
+        return files_metadata;
       }
 
+      var metadata = null;
+
     return {
-      customFindOffenses: function ( input ) {
-        return input;
+      findOffenses: function ( src ){
+        metadata = findOffenses (src);
+        return true;
       },
-      defaultFindOffenses: function ( src ) {
-        return findOffenses (src);
+      getNumberOfFiles: function () {
+        return metadata.length;
+      },
+      
+      getNumberOfOffenses: function ( file_num ) {
+        return getMetaFile(file_num).offenses.length;
+      },
+      getFilePath: function ( file_num ) {
+        return getMetaFile(file_num).path;
+      },
+      getFileLine: function ( file_num, offense ) {
+        return getMetaFile(file_num).offenses[offense].line;
+      },
+      getFileLineNumber: function ( file_num, offense ) {
+        return getMetaFile(file_num).offenses[offense].line_num;
+      },
+      getFileColumns: function ( file_num, offense ) {
+        return getMetaFile(file_num).offenses[offense].columns;
       }
     };
 
     })();
 
-    var Reporter = (function () {
+    /*Takes the metadata object that contains data about the offenses in the file(s) and parses it into a readable output of a specific format.*/
+    var Parser = (function () {
       var hr = '______________________________________________________\n';
 
-      function logOffenses (offense, line, columns, out, isFile) {
-        var output = out;
-        for (var i = 0; i < columns.length; i++) {
-          output = isFile ?
-          output + '-> ' + 'Style attribute located at: ' + 'L' + (line + 1) + ' C' + (columns[i] + 1) + '.' + linefeed :
-          output + ('-> ').yellow.bold + 'Style attribute located at: ' + ('L' + (line + 1)).bold.white + (' C' + (columns[i] + 1)).bold.white + '.' + linefeed;
+      function parseFileOffenses ( finder, file, toFile ) {
+        var offenses_length = finder.getNumberOfOffenses(file), line, line_num, columns, output = '';
+        for (var j = 0; j < offenses_length; j++) {
+          line = finder.getFileLine(file, j);
+          line_num = finder.getFileLineNumber(file, j);
+          columns = finder.getFileColumns(file, j);
+          for(var i = 0; i < columns.length; i++){
+            output = toFile ?
+            output + '-> ' + 'Style attribute located at: ' + 'L' + line_num + ' C' + columns[i] + '.' + linefeed :
+            output + ('-> ').yellow.bold + 'Style attribute located at: ' + ('L' + line_num).bold.white + (' C' + columns[i]).bold.white + '.' + linefeed;
+          }
+          output = toFile ?
+          output + hr + 'Offending line: ' + line + block_space :
+          output+ hr + ('Offending line: ').red.bold  + line + block_space;
         }
-        output = isFile ?
-        output + hr + 'Offending line: ' + offense + block_space :
-        output + hr + ('Offending line: ').green.bold  + offense + block_space;
-
         return output;
       }
 
-      function outputLog ( src, dest, to_stout_data, to_file_data ) {
-        var output_file = '';
-
-        for(var i = 0; i < src.length; i++) {
-          var header = '[Checking for inline css styles in file: ' + src[i] + ']' + block_space;
-          if(to_file_data !== undefined) {
-            output_file = output_file + header + to_file_data[i] + linefeed;
+      function parseAllOffenses ( finder, toFile ) {
+        var metadata_length = finder.getNumberOfFiles(), outputs = [];
+        for (var i = 0; i < metadata_length; i++) {
+          var output = toFile ?
+          linefeed + '[Checking for inline css styles in file: ' + finder.getFilePath(i) + ']' + block_space :
+          linefeed + ('[Checking for inline css styles in file: ' + finder.getFilePath(i) + ']').magenta.bold + block_space;
+          if(finder.getNumberOfOffenses(i) === 0){
+            output = toFile ?
+            output + "No offenses detected!" + block_space :
+            output + "No offenses detected!".green.inverse + block_space;
+          }else{
+            output = output + parseFileOffenses( finder, i, toFile );
           }
-          header = header.red.bold;
-          if(to_stout_data !== undefined) {
-            grunt.log.write(header + to_stout_data[i] + linefeed);
-          }
+          outputs.push(output);
         }
-        if(to_file_data !== undefined) {
+        return outputs;
+      }
+
+      return {
+        defaultParseOffenses: function ( finder, toFile ) {
+          return parseAllOffenses ( finder, toFile );
+        }
+      };
+
+    })();
+
+    /*Takes the parsed results array that represents each input file and outputs them either to standard output or to a specified output file from the options.*/
+    var Reporter = (function () {
+
+      function outputOffenses ( dest, parsed_files, toFile ) {
+        var output_file = '';
+        for(var i = 0; i < parsed_files.length; i++) {
+          if(toFile){ output_file = output_file + parsed_files[i];
+          } else { 
+            grunt.log.write(parsed_files[i]); 
+          } }
+        if(toFile) {
           grunt.file.write(dest.dest, output_file);
           grunt.log.writeln(('File "' + dest.dest + '" created.').white.bold);
         }
       }
 
       return {
-        customOutputLog: function ( output ) {
-          return output;
+        customOutputOffenses: function ( customOutput ) {
+          customOutput();
         },
-        defaultOutputLog: function (src, dest, to_stout_data, to_file_data) {
-          outputLog (src, dest, to_stout_data, to_file_data);
+        defaultOutputOffenses: function ( dest, parsed_files, toFile ) {
+          outputOffenses (dest, parsed_files, toFile);
         }
       };
+
     })();
-    
 
-    // Merge task-specific and/or target-specific options with these defaults.
-    var options = this.options({
-      reporter: {
-        tag: 'default',
-        file_output: true,
-        st_out: true
-      }
-    });
-
-    this.files.forEach( function ( f ) {
-      var paths = [];
-      var src = f.src.filter( function ( filepath ) {
-          if (!grunt.file.isFile(filepath)) {
+    this.files.forEach( function ( file_block ) {
+      var files = file_block.src.filter( function ( filepath ) {
+          if (!grunt.file.exists(filepath)) {
             grunt.log.write('Source file "' + filepath + '" not found.');
             return false;
           } else {
             return true;
           }
         }).map( function ( filepath ) {
-          paths.push(filepath);
-          return grunt.file.read(filepath);
+          return {path: filepath, data: grunt.file.read(filepath)};
         });
-        if(options.reporter.st_out === undefined){
-          options.reporter.st_out = true;
-        }
-        if(options.reporter.file_out === undefined){
-          options.reporter.file_out = true;
-        }
-        if(options.reporter.tag === (undefined || 'default')) {
-          var mult_out = InlineCSSOffense.defaultFindOffenses(src);
-          Reporter.defaultOutputLog (paths, f,
-                     options.reporter.st_out === true && options.reporter.st_out.length === undefined ? mult_out.stout_out : undefined,
-                     options.reporter.file_out === true && options.reporter.file_out.length === undefined ? mult_out.file_out : undefined);
-        } else {
-          Reporter.customOutputLog (function() {grunt.log.writeln('hi');});
+        if(files.length > 0){
+          if(options.reporter.to_file === undefined){
+            options.reporter.to_file = true;
+          }
+          if(options.reporter.tag === (undefined || 'default')) {
+            Finder.findOffenses(files);
+            var stout_print = Parser.defaultParseOffenses(Finder);
+            Reporter.defaultOutputOffenses (file_block, stout_print);
+            if(options.reporter.to_file === true && options.reporter.to_file.length === undefined) {
+              var file_print = Parser.defaultParseOffenses(Finder, true);
+              Reporter.defaultOutputOffenses (file_block, file_print, true);
+            }
+          } else {
+            Reporter.customOutputOffenses (function() {grunt.log.writeln('hi');});
+          }
         }
       });
   });
