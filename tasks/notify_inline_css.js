@@ -38,7 +38,7 @@ module.exports = function( grunt ) {
       function findOffendingCSSColumns ( line ) {
         var style_pattern = /style\s*=\s*(\"|\')[\s\ta-z0-9\-\:\;{}\(\)\+\=\&\%\#\@\!\$_\"\']*(\"|\')>/gi, result, columns = [];
         while ( (result = style_pattern.exec(line)) ) {
-            columns.push(result.index + 1);
+            columns.push({type: "CSS", column: result.index + 1});
         }
         return columns;
       }
@@ -65,14 +65,16 @@ module.exports = function( grunt ) {
       var metadata = null;
 
     return {
-      defaultfindOffenses: function ( src ){
+      findOffenses: function ( src ){
         metadata = findOffenses (src);
         return true;
+      },
+      getListOfFiles: function () {
+        return metadata;
       },
       getNumberOfFiles: function () {
         return metadata.length;
       },
-      
       getNumberOfOffenses: function ( file_num ) {
         return getMetaFile(file_num).offenses.length;
       },
@@ -108,14 +110,15 @@ module.exports = function( grunt ) {
           columns = finder.getFileColumns(file, j);
           for(var i = 0; i < columns.length; i++){
             output = toFile ?
-            output + '-> ' + 'Style attribute located at: ' + 'L' +
-            line_num + ' C' + columns[i] + '.' + linefeed :
-            output + ('-> ').yellow.bold + 'Style attribute located at: ' +
-            ('L' + line_num + ' C' + columns[i]).bold.white + '.' + linefeed;
+            output + '-> ' + columns[i].type + ' attribute located at: ' + 'L' +
+            line_num + ' C' + columns[i].column + '.' + linefeed :
+            output + ('-> ').yellow.bold + columns[i].type + ' attribute located at: ' +
+            ('L' + line_num + ' C' + columns[i].column).bold.white + '.' + linefeed;
           }
           output = toFile ?
-          output + hr + 'Offending line: ' + line + block_space :
-          output+ hr + ('Offending line: ').red.bold  + line + block_space;
+                  output + hr + 'Offending line: ' + line + block_space :
+                  output+ hr + ('Offending line: ').red.bold  + line +
+                  block_space;
         }
         return output;
       }
@@ -125,8 +128,10 @@ module.exports = function( grunt ) {
             outputs = [];
         for (var i = 0; i < metadata_length; i++) {
           var output = toFile ?
-          linefeed + '[Checking for inline css styles in file: ' + finder.getFilePath(i) + ']' + block_space :
-          linefeed + ('[Checking for inline css styles in file: ' + finder.getFilePath(i) + ']').magenta.bold + block_space;
+                      linefeed + '[Checking for offenses in file: ' +
+                      finder.getFilePath(i) + ']' + block_space :
+                      linefeed + ('[Checking for offenses styles in file: ' +
+                      finder.getFilePath(i) + ']').magenta.bold + block_space;
           if(finder.getNumberOfOffenses(i) === 0){
             output = toFile ?
             output + "No offenses detected!" + block_space :
@@ -142,7 +147,7 @@ module.exports = function( grunt ) {
       var parsed_files = null;
 
       return {
-        defaultParseOffenses: function ( finder, toFile ) {
+        parseOffenses: function ( finder, toFile ) {
           parsed_files = parseAllOffenses ( finder, toFile );
           return true;
         },
@@ -152,6 +157,9 @@ module.exports = function( grunt ) {
         getParsedFilesLength: function () {
           if (parsed_files !== null) { return parsed_files.length; }
           else { return -1; }
+        },
+        getParsedFileIndex: function ( file ) {
+          return parsed_files.indexOf( file );
         }
       };
     })();
@@ -179,7 +187,7 @@ module.exports = function( grunt ) {
         customOutputOffenses: function ( customOutput ) {
           customOutput();
         },
-        defaultOutputOffenses: function ( dest, parser, toFile ) {
+        outputOffenses: function ( dest, parser, toFile ) {
           outputOffenses (dest, parser, toFile);
         }
       };
@@ -202,9 +210,9 @@ module.exports = function( grunt ) {
             options.reporter.to_file = true;
           }
           if(options.reporter.tag === (undefined || 'default')) {
-            Finder.defaultfindOffenses(files);
-            Parser.defaultParseOffenses(Finder);
-            Reporter.defaultOutputOffenses(file_block, Parser);
+            Finder.findOffenses(files);
+            Parser.parseOffenses(Finder);
+            Reporter.outputOffenses(file_block, Parser);
             /*if(options.reporter.to_file === true && options.reporter.to_file.length === undefined) {
               var file_print = Parser.defaultParseOffenses(Finder, true);
               Reporter.defaultOutputOffenses (file_block, file_print, true);
