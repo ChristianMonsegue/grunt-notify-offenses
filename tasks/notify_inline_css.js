@@ -113,12 +113,6 @@ module.exports = function( grunt ) {
     })();
 
     /*Given a list of input files, it takes each file and finds all the metadata about the offenses. The search criteria can be expanded and manipulated using the Strategies object. This will be used later on by the parser which interprets this data.
-      Parsed Metadata:
-        -path of file
-        -offending line
-        -offending line number
-        -offense type
-        -offending columns of the line given that type
     */
     function MetaDataFile (path) {
       this.path = path;
@@ -218,9 +212,10 @@ module.exports = function( grunt ) {
           column = offense.getColumn(it);
             arrow_text = toFile ? '-> ' : ('-> ').yellow.bold;
             location_text = toFile ?
-                            'L' + line_num + ' C' + column.getColumnNumber() :
-                            ('L' + line_num + ' C' + column.getColumnNumber()).bold.white;
-            output = output + arrow_text + column.getColumnType() + ' attribute located at: ' + location_text + '.' + linefeed;
+                'L' + line_num + ' C' + column.getColumnNumber() :
+                ('L' + line_num + ' C' + column.getColumnNumber()).bold.white;
+            output = output + arrow_text + column.getColumnType() +
+                ' attribute located at: ' + location_text + '.' + linefeed;
           it++;
         }
         return output;
@@ -238,9 +233,8 @@ module.exports = function( grunt ) {
           line_num = offense.getLineNumber();
           output = output + parseLocationToPlainText(offense,line_num, toFile);
           output = toFile ?
-                    output + hr + 'Offending line: ' + line + block_space :
-                    output+ hr + ('Offending line: ').red.bold  + line +
-                    block_space;
+              output + hr + 'Offending line: ' + line + block_space :
+              output+ hr + ('Offending line: ').red.bold  + line + block_space;
           it++;
         }
         return output;
@@ -250,23 +244,25 @@ module.exports = function( grunt ) {
         var metadata_file,
             output,
             check_file_text,
+            filepath,
             outputs = [],
             it = 0;
         while(it < finder.getMetaDataLength()) {
           metadata_file = finder.getMetaDataFile(it);
+          filepath = metadata_file.getFilePath();
           check_file_text = toFile ?
-                            '[Checking for offenses in file: ' +
-                            metadata_file.getFilePath() + ']' :
-                            ('[Checking for offenses in file: ' +
-                             metadata_file.getFilePath() + ']').magenta.bold;
+              '[Checking for offenses in file: ' + filepath + ']' :
+              ('[Checking for offenses in file: ' + filepath +
+                  ']').magenta.bold;
           output = linefeed + check_file_text + block_space;
           if(metadata_file.getOffensesLength() === 0){
             output = toFile ?
-                    output + "No offenses detected!" + block_space :
-                    output + "No offenses detected!".green.inverse +
-                    block_space;
+                output + "No offenses detected!" + block_space :
+                output + "No offenses detected!".green.inverse + block_space;
           }else{
-            output = output + parseFileToPlainText( finder, metadata_file, toFile );
+            output = output + parseFileToPlainText( finder, 
+                                                    metadata_file,
+                                                    toFile );
           }
           outputs.push(output);
           it++;
@@ -341,7 +337,8 @@ module.exports = function( grunt ) {
             Finder.findOffenses(files, Strategies);
             Parser.parseOffensesToPlainText(Finder);
             Reporter.outputOffenses(file_block, Parser);
-            if(options.reporter.to_file === true && options.reporter.to_file.length === undefined) {
+            if(options.reporter.to_file === true &&
+               options.reporter.to_file.length === undefined) {
               Parser.parseOffensesToPlainText(Finder, true);
               Reporter.outputOffenses(file_block, Parser, true);
             }
