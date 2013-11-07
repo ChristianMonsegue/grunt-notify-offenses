@@ -20,6 +20,7 @@ module.exports = function(grunt) {
       ],
       options: {
         jshintrc: '.jshintrc',
+        multistr: true
       },
     },
 
@@ -29,7 +30,7 @@ module.exports = function(grunt) {
     },
 
     // Configuration to be run (and then tested).
-    notify_inline_css: {
+    notify_inline_offenses: {
       default_options: {
         options: {
           reporter: {
@@ -59,7 +60,7 @@ module.exports = function(grunt) {
 
   // Whenever the "test" task is run, first clean the "tmp" dir, then run this
   // plugin's task(s), then test the result. 'nodeunit'
-  grunt.registerTask('test', ['notify_inline_css']);
+  grunt.registerTask('test', ['notify_inline_offenses']);
 
   // By default, lint and run all tests.
   grunt.registerTask('default', ['jshint', 'test']);
