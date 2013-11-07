@@ -37,7 +37,8 @@ module.exports = function(grunt) {
           }
         },
         files: {
-          'tmp/remittence': ['C:/workspace/AM/EHR/billing/**/*.html']
+          'tmp/remittence': ['C:/workspace/AM/EHR/billing/**/*.html'],
+          'tmp/inlinet': ['test/fixtures/inline2.html']
         },
       }
     },
