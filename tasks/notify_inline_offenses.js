@@ -434,40 +434,40 @@ module.exports = function( grunt ) {
         var start_file_tag = '<file>' + linefeed,
             filepath_tag = indentBy(1) + '<filepath>' + filepath +
                             '</filepath>' + linefeed,
-            start_body_tag = indentBy(2) + '<body>' + linefeed;
+            start_body_tag = indentBy(1) + '<body>' + linefeed;
         return start_file_tag + filepath_tag + start_body_tag;
       }
 
       function parseStartLine () {
-        var start_line_tag = indentBy(3) + '<line>' + linefeed;
+        var start_line_tag = indentBy(2) + '<line>' + linefeed;
         return start_line_tag;
       }
 
       function parseLocation ( line_num, column_num, column_type ) {
-        var type_tag = indentBy(5) + '<type>' + column_type + '</type>' +
+        var type_tag = indentBy(4) + '<type>' + column_type + '</type>' +
                         linefeed,
-            row_tag = indentBy(5) + '<row>' + line_num + '</row>' + linefeed,
-            col_tag = indentBy(5) + '<col>' + column_num + '</col>' + linefeed,
-            offense_tag = indentBy(4) + '<offense>' + linefeed + type_tag +
-                          row_tag + col_tag + indentBy(4) + '</offense>' +
+            row_tag = indentBy(4) + '<row>' + line_num + '</row>' + linefeed,
+            col_tag = indentBy(4) + '<col>' + column_num + '</col>' + linefeed,
+            offense_tag = indentBy(3) + '<offense>' + linefeed + type_tag +
+                          row_tag + col_tag + indentBy(3) + '</offense>' +
                           linefeed;
         return offense_tag;
       }
 
       function parseFileLine ( line ) {
-        var offending_line_tag = indentBy(4) + '<offendingLine>' +
+        var offending_line_tag = indentBy(3) + '<offendingLine>' +
                               'Offending line: ' + line + '</offendingLine>' +
                               linefeed;
         return offending_line_tag;
       }
 
       function parseEndLine () {
-        var end_line_tag = indentBy(3) + '</line>' + linefeed;
+        var end_line_tag = indentBy(2) + '</line>' + linefeed;
         return end_line_tag;
       }
 
       function parseEnd ( total ) {
-        var end_body_tag = indentBy(2) + '</body>' + linefeed,
+        var end_body_tag = indentBy(1) + '</body>' + linefeed,
             total_offenses_tag = indentBy(1) + '<totalOffenses>' + total +
                               '</totalOffenses>' + linefeed,
             start_file_tag = '</file>' + linefeed;
@@ -641,7 +641,7 @@ module.exports = function( grunt ) {
             OffendingColumnFinder.changeTabWidth(4);
             OffensesCollectionAssembler.assemble(files, OffendingColumnFinder);
             OffendingFilesReader.read(OffensesCollectionAssembler,
-                                      PlainTextOutputParser);
+                                      MinimalXMLParser);
             Reporter.outputOffenses(file_block, OffendingFilesReader);
             if(options.reporter.to_file === true &&
                options.reporter.to_file.length === undefined) {
