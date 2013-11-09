@@ -28,7 +28,10 @@ module.exports = function( grunt ) {
       },
       assembler: {
         tabwidth: 4,
-        offenses: {}
+        offenses: {
+          "CSS": [],
+          "Align": []
+        }
       }
     });
 
@@ -243,6 +246,7 @@ module.exports = function( grunt ) {
           if(patterns[index].type.toLowerCase() === type.toLowerCase()){
             exists = true;
           }
+          index++;
         }
         return exists;
       }
@@ -256,8 +260,31 @@ module.exports = function( grunt ) {
             exists = true;
             pattern = patterns[index].pattern;
           }
+          index++;
         }
         return pattern;
+      }
+
+      function getModifiers ( modifiers ) {
+        var modifier_list = [];
+        for (var mod in modifiers) {
+          if ((modifiers[mod] === 'global' ||
+              modifiers[mod] === 'g') &&
+              modifier_list.indexOf('g') === -1) {
+            modifier_list.push('g');
+          }
+          if ((modifiers[mod] === 'case-insensitive' ||
+              modifiers[mod] === 'i') &&
+              modifier_list.indexOf('i') === -1) {
+            modifier_list.push('i');
+          }
+        }
+        return modifier_list;
+      }
+
+      function escapeAllQuotes ( pattern ) {
+        var escaped_pattern = pattern.replace(/\'/g,"\\'");
+        return escaped_pattern.replace(/\"/g,'\\"');
       }
 
       /* Finds all the columns of the given offense by returning the starting
@@ -274,18 +301,20 @@ module.exports = function( grunt ) {
       function findOffendingColumns ( line, type, pattern ) {
           var style_pattern,
               result,
+              pattern_modifiers = ['g', 'i'],
               columns = [];
-          /* If a pattern is not defined, search through the pre-defined
-          *  offenses for an equivalent type, else return an empty array
-          */
-          if(pattern === undefined) {
+          if(Array.isArray(pattern) && pattern.length > 0) {
+            if(pattern.length > 1){
+              pattern_modifiers = getModifiers(pattern.slice(1));
+            }
+            style_pattern = new RegExp(escapeAllQuotes(pattern[0]),
+                                        pattern_modifiers.join(''));
+          } else {
             if(doesTypeExist(type)){
               style_pattern = getPattern(type);
             } else {
               return columns;
             }
-          } else {
-            style_pattern = pattern;
           }
           while ( (result = style_pattern.exec(line)) ) {
                 columns.push(new OffendingColumn(type, result.index + 1));
@@ -304,36 +333,27 @@ module.exports = function( grunt ) {
       *                            user provides with defined types and
       *                            patterns.
       */
-      function createOffendingColumnsList ( line, items ) {
+      function createOffendingColumnsList ( line, offenses ) {
         var merge_columns,
             columns = [];
-        if(items !== undefined) {
-          //If user-defined offenses is an array, iterate through them
-          if(typeof items === 'array') {
-            for (var i in items){
-              if(doesTypeExist(items[i].type.toString())){
-                merge_columns = findOffendingColumns(line,
-                                                      items[i].type,
-                                                      items[i].pattern);
-                columns = columns.concat(merge_columns);
-              }
-            }
-          } else {
-            //Else if it is a single user-defined offense, search for that
-            if(doesTypeExist(items.type.toString())){
-              merge_columns = findOffendingColumns(line,
-                                                    items.type,
-                                                    items.pattern);
-              columns = columns.concat(merge_columns);
-            }
+        if(offenses !== undefined) {
+          
+          for (var type in offenses) {
+            if (!offenses.hasOwnProperty(type)) { continue; }
+            merge_columns = findOffendingColumns(line,
+                                                    type,
+                                                    offenses[type]);
+            columns = columns.concat(merge_columns);
           }
         }
-        //Now search for pre-defined offenses from the patterns object
-        for (var j in patterns) {
-            merge_columns = findOffendingColumns(line,
-                                                  patterns[j].type,
-                                                  patterns[j].pattern);
-            columns = columns.concat(merge_columns);
+        if(columns.length === 0) {
+          //Default search for pre-defined offenses from the patterns object
+          for (var j in patterns) {
+              merge_columns = findOffendingColumns(line,
+                                                    patterns[j].type,
+                                                    patterns[j].pattern);
+              columns = columns.concat(merge_columns);
+          }
         }
         /* Filters all duplicates if they exist. This handles the case if
         *  the user omits the pattern from his offense set, thus making
@@ -396,7 +416,7 @@ module.exports = function( grunt ) {
                                                 options.assembler.tabwidth));
             if(new_tab_line.trim().length > 0) {
               offending_columns =
-                finder.find(new_tab_line);
+                finder.find(new_tab_line, options.assembler.offenses);
               if(offending_columns.length > 0) {
                 offending_line = new OffendingLine(new_tab_line.trim(),
                                                    (+j) + 1);
@@ -945,10 +965,10 @@ module.exports = function( grunt ) {
         return parser;
       }
 
-      function isUndefinedOptions () {
-        if(options.reporter.to_file === undefined &&
-           options.reporter.to_file !== false){
-          options.reporter.to_file = true;
+      function undefinedToDefault () {
+        if(options.to_file === undefined &&
+           options.to_file !== false){
+          options.to_file = true;
         }
         if(options.reporter.stout === undefined ||
            options.reporter.stout === false){
@@ -957,6 +977,9 @@ module.exports = function( grunt ) {
         if(options.reporter.output === undefined ||
            options.reporter.output === false){
           options.reporter.output = 'default';
+        }
+        if(options.assembler === undefined){
+          options.assembler = {};
         }
         if(options.assembler.tabwidth !== undefined &&
            typeof options.assembler.tabwidth === 'number'){
@@ -972,7 +995,7 @@ module.exports = function( grunt ) {
               assembled_files_collection,
               parsed_files_collection;
           if(input_files_collection.getLength() > 0) {
-            isUndefinedOptions();
+            undefinedToDefault();
 
             assembled_files_collection = new Collection();
               while (input_files_collection.hasNext()) {
