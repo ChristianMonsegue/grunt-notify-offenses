@@ -16,34 +16,89 @@ module.exports = function( grunt ) {
                           'Searches through a list of files and notifies on all declarative inline code.',
                           function() {
 
+    /*Variable to solve scope issues when calling "this" functions*/
+    var _self = this;
+
     // Merge task-specific and/or target-specific options with these defaults.
     var options = this.options({
+      to_file: false,
       reporter: {
-        tag: 'default',
-        to_file: true,
+        stout: 'default',
+        output: 'default'
+      },
+      assembler: {
+        tabwidth: 4,
+        offenses: {}
       }
     });
 
-    //Line formatting using grunt's cross-browser linefeed utility.
+    /* Line formatting using grunt's cross-browser linefeed utility and
+    *  a general horizontal line for parser purposes.
+    */
     var linefeed = grunt.util.linefeed,
         block_space = linefeed + linefeed + linefeed,
         hr = '______________________________________________________' +
           linefeed;
 
-    /* Helper function to indent a line by a number of \s characters to
+    /*Default tab-width*/
+    var tabwidth = 4;
+
+    /* Helper function to indent a line by (amount * 2) \s characters to
     *  to make the output more readable.
+    *
+    *  @param amount: the number of \s characters multiplied by 2 to indent
+    *                 by
     */
     function indentBy ( amount ) {
       var indent = '',
           it = 0;
       while (it < amount) {
-        indent = indent + ' ';
+        indent = indent + '  ';
         it++;
       }
       return indent;
     }
-    
 
+    /* Helper function to convert all tab indentation into spaces equivalent
+    *  to the tab width based on the indentation option. This works in
+    *  tandem with the indentation option of JSHint so columns will be
+    *  calculated based on a correctly linted file.
+    *
+    *  @param chars: the number of \s characters to set the tab width to
+    */
+    function convertTabToTabWidth ( chars ) {
+      var spaces_in_tabwidth = '',
+          width = chars;
+      if(typeof width === "string") { width = +(width); } 
+      for (var i = 0; i < width; i++) {
+        spaces_in_tabwidth += ' ';
+      }
+      return spaces_in_tabwidth;
+    }
+    
+    /**************************************************************************
+    ***************************************************************************
+    ***************************************************************************
+    ***************************************************************************
+    *
+    *  Collection "super class" that contains protected (by naming convention)
+    *  variables and accompanying methods for interacting with a general
+    *  collection of similar data. This super class will be extended by various
+    *  more specialized derived classes for different parts of the offending
+    *  files.
+    *
+    *  Interface Collection {
+    *    addElement ( element );
+    *    getLength ();
+    *    hasNext ();
+    *    getNext ();
+    *    resetPointer ();
+    *  }
+    *
+    ***************************************************************************
+    ***************************************************************************
+    ***************************************************************************
+    **************************************************************************/
     function Collection ( array ) {
       this._pointer = 0;
       this._collection = array || [];
@@ -53,13 +108,6 @@ module.exports = function( grunt ) {
       if(this._collection.length === 0) { this._current_element = element; }
       this._collection.push(element);
     };
-    Collection.prototype.getElement = function ( index ) {
-      if (index >= 0 && index < this._collection.length) {
-        return this._collection[index];
-      } else {
-        return -1;
-      }
-    };
     Collection.prototype.getLength = function () {
       return this._collection.length;
     };
@@ -67,7 +115,6 @@ module.exports = function( grunt ) {
       if(this._pointer < this._collection.length){ return true; }
       else { return false; }
     };
-
     Collection.prototype.getNext = function () {
       if(this._pointer < this._collection.length){
         var element = this._collection[this._pointer];
@@ -78,10 +125,6 @@ module.exports = function( grunt ) {
         return -1;
       }
     };
-    Collection.prototype.getCurrent = function () {
-      if(this._current_element !== null) { return this._current_element; }
-      else { return -1; }
-    };
     Collection.prototype.resetPointer = function () {
     this._pointer = 0;
     if(this._collection.length > 0) {
@@ -90,35 +133,19 @@ module.exports = function( grunt ) {
     return true;
     };
 
-    function OffendingAssembled ( path ) {
-      Collection.call( this );
-      this._path = path;
-      
-      this.getTotalOffenses = function () {
-        var total = 0;
-        for (var e in this._collection) {
-          total += this._collection[e].getLength();
-        }
-        return total;
-      };
-      this.getFilePath = function () {
-        return this._path;
-      };
-    }
-    OffendingAssembled.prototype = new Collection();
-
-
-    /* OffendingFile "class" for creating OffendingFile objects which
+    /* OffendingFile "subclass" for creating OffendingFile objects which
     *  contains the filepath and a collection of the offending lines in an
     *  offenses array needed to read and parse later. These objects are later
-    *  contained in an offenses collection object.
+    *  stored in a collection object.
+    *
+    *  Extends: Collection
     *
     *  @param path: the path to the file in which the extracted
     *               data pertains to
     */
     function OffendingFile ( path ) {
       Collection.call( this );
-      this._path = path;
+      this._path = path || 'No path defined.';
       
       this.getTotalOffenses = function () {
         var total = 0;
@@ -133,20 +160,20 @@ module.exports = function( grunt ) {
     }
     OffendingFile.prototype = new Collection();
 
-    /* OffendingLine "class" for creating OffendingLine objects which
+    /* OffendingLine "subclass" for creating OffendingLine objects which
     *  contains the offense information needed to read and parse later. These
-    *  objects are later collected in a OffendingLine object's offenses
-    *  array.
+    *  objects are later stored in an OffendingFile object as a collection.
+    *
+    *  Extends: Collection
     *
     *  @param line: the line that contains offenses
     *  @param line_num: the line number of the offending line in the
     *                   offending file
-    *  @param columns: the collection of offending columns in the line
     */
     function OffendingLine ( line, line_num ) {
       Collection.call( this );
-      this._line = line;
-      this._line_num = line_num;
+      this._line = line || 'No line defined.';
+      this._line_num = line_num || -1;
 
       this.getLine = function () {
         return this._line;
@@ -158,17 +185,17 @@ module.exports = function( grunt ) {
     OffendingLine.prototype = new Collection();
 
     /* OffendingColumn "class" for creating OffendingColumn objects that
-    *  contains the type and column number. These will eventually be read
-    *  and parsed by a reader.
+    *  contains the type and column number. These objects are later
+    *  stored in an OffendingLine object as a collection.
     *
     *  @param type: the type of the offense starting at the column
     *  @param column: the column number where the offense begins
     */
     function OffendingColumn ( type, column ) {
-      this.type = type;
-      this.column = column;
+      this.type = type || 'No type defined';
+      this.column = column || -1;
     }
-    OffendingColumn.prototype.getColumnType = function () {
+    OffendingColumn.prototype.getOffenseType = function () {
       return this.type;
     };
     OffendingColumn.prototype.getColumnNumber = function () {
@@ -185,14 +212,14 @@ module.exports = function( grunt ) {
     *  on stored offense types.
     *
     *  Interface Finder {
-    *    find ( source, item );
+    *    find ( source, [items,]);
     *  }
     *
     ***************************************************************************
     ***************************************************************************
     ***************************************************************************
     **************************************************************************/
-    var OffendingColumnsFinder = (function () {
+    var OffendingColumnsByLineFinder = (function () {
 
       /* Holds objects with key type and pattern in a collection as search
       *  criteria for offenses.
@@ -209,30 +236,11 @@ module.exports = function( grunt ) {
         }
       ];
 
-      var tabwidth = 8;
-
-      /* Helper function to convert all tab indentation into spaces equivalent
-      *  to the tab width based on the indentation option. This works in
-      *  tandem with the indentation option of JSHint so columns will be
-      *  calculated based on a correctly linted file.
-      *
-      *  @param c: the number of \s characters to set the tab width to
-      */
-      function convertTabToTabWidth ( c ) {
-        var spaces_in_tabwidth = '',
-            characters = c;
-        if(typeof characters === "string") { characters = +(characters); } 
-        for (var i = 0; i < characters; i++) {
-          spaces_in_tabwidth = spaces_in_tabwidth + ' ';
-        }
-        return spaces_in_tabwidth;
-      }
-
       function doesTypeExist (type) {
         var index = 0,
             exists = false;
         while (index < patterns.length && !exists) {
-          if(patterns[index].type === type){
+          if(patterns[index].type.toLowerCase() === type.toLowerCase()){
             exists = true;
           }
         }
@@ -252,10 +260,11 @@ module.exports = function( grunt ) {
         return pattern;
       }
 
-      /* Finds all the columns of the offenses by returning the starting
+      /* Finds all the columns of the given offense by returning the starting
       *  index of said offense + 1 to offset array indexing. Each column of
-      *  an offense is creates a Column object that holds the type of offense
-      *  and the column number and is pushed into a collection of columns.
+      *  an offense creates a Column object that holds the type of offense
+      *  and the column number. Additionally, each Column object is pushed
+      *  into an array of columns.
       *
       *  @param line: a line in a file to be searched for offending columns
       *  @param type: the type of offense to search for in the given line
@@ -265,47 +274,79 @@ module.exports = function( grunt ) {
       function findOffendingColumns ( line, type, pattern ) {
           var style_pattern,
               result,
-              columns = [],
-              //Converts all tab indentations into the specified tab width
-              new_tab_line = line.replace(/^\t/,
-                                         convertTabToTabWidth(tabwidth));
+              columns = [];
+          /* If a pattern is not defined, search through the pre-defined
+          *  offenses for an equivalent type, else return an empty array
+          */
           if(pattern === undefined) {
             if(doesTypeExist(type)){
               style_pattern = getPattern(type);
             } else {
-              return [];
+              return columns;
             }
           } else {
             style_pattern = pattern;
           }
-          while ( (result = style_pattern.exec(new_tab_line)) ) {
+          while ( (result = style_pattern.exec(line)) ) {
                 columns.push(new OffendingColumn(type, result.index + 1));
           }
           return columns;
         }
 
-      return {
-        find: function ( source, item ) {
-          if(item === undefined) {
-            var columns = [];
-            for (var i in patterns) {
-              columns = columns.concat(findOffendingColumns
-                                              (source,
-                                                patterns[i].type,
-                                                patterns[i].pattern));
+      /* Regulates the creation of the list of offending columns by checking
+      *  if there is a user-defined set of offenses to look for and if there
+      *  is, search for those first before searching for the pre-defined
+      *  offenses. Note that user-defined offense types are matched as
+      *  case-insensitive, so "css" = "CSS".
+      *
+      *  @param line: a line in a file to be searched for offending columns
+      *  @param items [optional]: a list of objects or a single object that a
+      *                            user provides with defined types and
+      *                            patterns.
+      */
+      function createOffendingColumnsList ( line, items ) {
+        var merge_columns,
+            columns = [];
+        if(items !== undefined) {
+          //If user-defined offenses is an array, iterate through them
+          if(typeof items === 'array') {
+            for (var i in items){
+              if(doesTypeExist(items[i].type.toString())){
+                merge_columns = findOffendingColumns(line,
+                                                      items[i].type,
+                                                      items[i].pattern);
+                columns = columns.concat(merge_columns);
+              }
             }
-            return columns;
-          }
-          return findOffendingColumns (source, item.type, item.pattern);
-        },
-        changeTabWidth: function ( newtabwidth ) {
-          var new_tabwidth;
-          if (typeof newtabwidth === "string" ) {
-            new_tabwidth = +(newtabwidth);
           } else {
-            new_tabwidth = newtabwidth;
+            //Else if it is a single user-defined offense, search for that
+            if(doesTypeExist(items.type.toString())){
+              merge_columns = findOffendingColumns(line,
+                                                    items.type,
+                                                    items.pattern);
+              columns = columns.concat(merge_columns);
+            }
           }
-          tabwidth = new_tabwidth;
+        }
+        //Now search for pre-defined offenses from the patterns object
+        for (var j in patterns) {
+            merge_columns = findOffendingColumns(line,
+                                                  patterns[j].type,
+                                                  patterns[j].pattern);
+            columns = columns.concat(merge_columns);
+        }
+        /* Filters all duplicates if they exist. This handles the case if
+        *  the user omits the pattern from his offense set, thus making
+        *  the search see if it exists in the pre-defined offenses.
+        */
+        return columns.filter(function(elem, pos) {
+            return columns.indexOf(elem) === pos;
+        });
+      }
+
+      return {
+        find: function ( source, items ) {
+          return createOffendingColumnsList(source, items);
         }
       };
 
@@ -325,9 +366,7 @@ module.exports = function( grunt ) {
     *  OffendingColumns object, thus "assembling" the separate parts into one.
     *
     *  Interface Assembler {
-    *    assemble ( base, [part,] );
-    *    getLength ();
-    *    getElement ( index );
+    *    assemble ( base, [operators,] );
     *  }
     *
     ***************************************************************************
@@ -336,27 +375,30 @@ module.exports = function( grunt ) {
     **************************************************************************/
     var OffendingFileDataAssembler = (function () {
 
-      var offending_files_collection = null;
-
       /* Assembles an offending file's data by combining, as parts,
       *  the offending file, the offending line and offending columns into a
-      *  comprehensive object that is then inserted into the base collection.
+      *  comprehensive data object.
       *  @param file: the offending file from the given path to be assembled
       *               with the attained data.
       *  @param finder: the finder object that gives the collection of
       *                 offending columns.
       */
-      function assembleOffensesCollection ( file, finder ) {
+      function assembleOffenseData( file, finder ) {
           var offending_line,
               offending_columns,
+              new_tab_line,
               lines = file.data.split(linefeed),
               offending_file = new OffendingFile(file.path);
           for(var j in lines){
-            if(lines[j].length > 0) {
+            //Converts all tab indentations into the specified tab width
+            new_tab_line = lines[j].replace(/^\t/,
+                                         convertTabToTabWidth(
+                                                options.assembler.tabwidth));
+            if(new_tab_line.trim().length > 0) {
               offending_columns =
-                finder.find(lines[j]);
+                finder.find(new_tab_line);
               if(offending_columns.length > 0) {
-                offending_line = new OffendingLine(lines[j].trim(),
+                offending_line = new OffendingLine(new_tab_line.trim(),
                                                    (+j) + 1);
                 for (var i in offending_columns) {
                   offending_line.addElement(offending_columns[i]);
@@ -367,8 +409,8 @@ module.exports = function( grunt ) {
       }
 
     return {
-      assemble: function ( base, part ) {
-        return assembleOffensesCollection(base, part);
+      assemble: function ( base, operator ) {
+        return assembleOffenseData(base, operator);
       }
     };
 
@@ -379,15 +421,18 @@ module.exports = function( grunt ) {
     ***************************************************************************
     ***************************************************************************
     *
-    *  Parser objects for parsing the offenses for the reporter.
+    *  Parser objects for parsing the assembled data objects for the reporter.
+    *  These parsers will be injected into the reader.
     *
     *  Interface Parser {
+         parseStart();
     *    parseHeader ( header );
-    *    parseStartLine ();
-    *    parseLocation ( name, row, col );
+    *    parseStartLine ( row );
+    *    parseLocation ( name, col );
     *    parseSource ( source );
     *    parseEndLine ();
-    *    parseEnd ( footer );
+         parseFooter ( footer );
+    *    parseEnd ();
     *  }
     *
     ***************************************************************************
@@ -395,24 +440,30 @@ module.exports = function( grunt ) {
     ***************************************************************************
     **************************************************************************/
 
-    /*Parses the given text into a plaintext format and returns that*/
+    /*Parses the given text into a PlainText format*/
     var PlainTextParser = (function () {
 
+      function parseStart () {
+        return linefeed;
+      }
+
       function parseHeader ( filepath ) {
-        var check_file_text = linefeed +
-                '[Checking for offenses in file: ' + filepath + ']';
-        return linefeed + check_file_text + linefeed;
+        var check_file_text = 
+              '[Checking for offenses in file: ' + filepath + ']';
+        return block_space + check_file_text + linefeed;
       }
 
-      function parseStartLine () {
-        return hr;
+      function parseStartLine ( line_num ) {
+        return hr + 'Offenses located at line number: L' + line_num +
+                linefeed + hr;
       }
 
-      function parseLocation ( column_type, line_num, column_num ) {
-        var arrow_text = '-> ',
-            location_text = 'L' + line_num + ' C' + column_num;
+      function parseLocation ( column_type,  column_num ) {
+        var arrow_text = indentBy(2) + '-> ',
+            location_text = 'C' + column_num;
         return arrow_text + column_type +
-                ' attribute located at: ' + location_text + '.' + linefeed;
+                ' attribute located at column: ' + location_text + '.' +
+                linefeed;
       }
 
       function parseSource ( line ) {
@@ -420,21 +471,29 @@ module.exports = function( grunt ) {
       }
 
       function parseEndLine () {
-        return hr;
+        return hr + block_space;
       }
-      function parseEnd ( total ) {
+      function parseFooter ( total ) {
+        //Add empty string to total to convert to a String and use formatting
         return 'Number of Offenses: ' + total + block_space;
       }
 
+      function parseEnd () {
+        return linefeed;
+      }
+
       return {
+        parseStart: function () {
+          return parseStart ();
+        },
         parseHeader: function ( header ) {
           return parseHeader ( header );
         },
-        parseStartLine: function () {
-          return parseStartLine ();
+        parseStartLine: function ( row ) {
+          return parseStartLine ( row );
         },
-        parseLocation: function ( name, row, col  ) {
-          return parseLocation ( name, row, col );
+        parseLocation: function ( name, col  ) {
+          return parseLocation ( name, col );
         },
         parseSource: function ( source ) {
           return parseSource ( source );
@@ -442,31 +501,39 @@ module.exports = function( grunt ) {
         parseEndLine: function () {
           return parseEndLine ();
         },
-        parseEnd: function ( footer ) {
-          return parseEnd ( footer );
+        parseFooter: function ( footer ) {
+          return parseFooter( footer );
+        },
+        parseEnd: function () {
+          return parseEnd ();
         }
       };
     })();
 
-    /*Parses the given text into a colorful plaintext format and returns that*/
-    var FormattedPlainTextParser = (function () {
+    /*Parses the given text into a colorful PlainText format*/
+    var DecoratedPlainTextParser = (function () {
+
+      function parseStart () {
+        return linefeed;
+      }
 
       function parseHeader ( filepath ) {
-        var check_file_text = linefeed +
-                ('[Checking for offenses in file: ' + filepath +
-                 ']').magenta.bold;
-        return linefeed + check_file_text + linefeed;
+        var check_file_text =
+            ('[Checking for offenses in file: ' + filepath +']').magenta.bold;
+        return block_space + check_file_text + linefeed;
       }
 
-      function parseStartLine () {
-        return hr;
+      function parseStartLine ( line_num ) {
+        return hr + 'Offenses located at line number: ' +
+                ('L' + line_num).white.bold + linefeed + hr;
       }
 
-      function parseLocation ( column_type, line_num, column_num ) {
-        var arrow_text = ('-> ').yellow.bold,
-            location_text = ('L' + line_num + ' C' + column_num).bold.white;
+      function parseLocation ( column_type, column_num ) {
+        var arrow_text = indentBy(2) + ('-> ').yellow.bold,
+            location_text = ('C' + column_num).white.bold;
         return arrow_text + column_type +
-                ' attribute located at: ' + location_text + '.' + linefeed;
+                ' attribute located at column: ' + location_text + '.' +
+                linefeed;
       }
 
       function parseSource ( line ) {
@@ -474,23 +541,29 @@ module.exports = function( grunt ) {
       }
 
       function parseEndLine () {
-        return  hr;
+        return  hr + block_space;
       }
-
-      function parseEnd ( total ) {
+      function parseFooter ( total ) {
         //Add empty string to total to convert to a String and use formatting
         return 'Number of Offenses: ' + (total+'').green.bold + block_space;
       }
 
+      function parseEnd () {
+        return linefeed;
+      }
+
       return {
+        parseStart: function () {
+          return parseStart ();
+        },
         parseHeader: function ( header ) {
           return parseHeader ( header );
         },
-        parseStartLine: function () {
-          return parseStartLine ();
+        parseStartLine: function ( row ) {
+          return parseStartLine ( row );
         },
-        parseLocation: function ( name, row, col  ) {
-          return parseLocation ( name, row, col );
+        parseLocation: function ( name, col  ) {
+          return parseLocation ( name, col );
         },
         parseSource: function ( source ) {
           return parseSource ( source );
@@ -498,75 +571,83 @@ module.exports = function( grunt ) {
         parseEndLine: function () {
           return parseEndLine ();
         },
-        parseEnd: function ( footer ) {
-          return parseEnd ( footer );
+        parseFooter: function ( footer ) {
+          return parseFooter( footer );
+        },
+        parseEnd: function () {
+          return parseEnd ();
         }
       };
     })();
 
-    /*Parses the given text into a XML format and returns that*/
+    /*Parses the given text into a basic XML format*/
     var MinimalXMLParser = (function () {
+      function parseStart () {
+        var start_file_tag = '<inlineOffenses>' + linefeed;
+        return start_file_tag;
+      }
 
       function parseHeader ( filepath ) {
-        var start_file_tag = '<file>' + linefeed,
-            start_header_tag = indentBy(1) + '<header>' + linefeed,
-            filepath_tag = indentBy(2) + '<filepath>' + filepath +
-                            '</filepath>' + linefeed,
-            end_header_tag = indentBy(1) + '</header>' + linefeed,
-            start_body_tag = indentBy(1) + '<body>' + linefeed;
-        return start_file_tag + start_header_tag + filepath_tag +
-                end_header_tag + start_body_tag;
+        var start_file_tag = indentBy(1) + '<offensiveFile>' + linefeed,
+            file_name_tag = indentBy(2) + '<filepath>"' + filepath +
+                              '"</filepath>' + linefeed;
+        return start_file_tag + file_name_tag;
       }
 
-      function parseStartLine () {
-        var start_line_tag = indentBy(2) + '<line>' + linefeed;
-        return start_line_tag;
+      function parseStartLine ( line_num ) {
+        var start_line_tag = indentBy(2) + '<offensiveLine>' + linefeed;
+        var line_number_tag = indentBy(3) + '<lineNumber>' + line_num +
+            '</lineNumber>' + linefeed;
+        return start_line_tag + line_number_tag;
       }
 
-      function parseLocation ( column_type, line_num, column_num ) {
-        var type_tag = indentBy(4) + '<type>' + column_type + '</type>' +
+      function parseLocation ( column_type, column_num ) {
+        var type_tag = indentBy(4) + '<type>"' + column_type +
+                        '"</type>' +
                         linefeed,
-            row_tag = indentBy(4) + '<row>' + line_num + '</row>' + linefeed,
-            col_tag = indentBy(4) + '<col>' + column_num + '</col>' + linefeed,
-            offense_tag = indentBy(3) + '<offense>' + linefeed + type_tag +
-                          row_tag + col_tag + indentBy(3) + '</offense>' +
-                          linefeed;
+            col_tag = indentBy(4) + '<column>' + column_num +
+                      '</column>' + linefeed,
+            offense_tag = indentBy(3) + '<offensiveColumn>' + linefeed +
+                          type_tag + col_tag + indentBy(3) +
+                          '</offensiveColumn>' + linefeed;
         return offense_tag;
       }
 
       function parseSource ( line ) {
-        var offending_line_tag = indentBy(3) + '<offendingLine>' +
-                              'Offending line: ' + line + '</offendingLine>' +
+        var offending_line_tag = indentBy(3) + '<line>"' + line + '"</line>' +
                               linefeed;
         return offending_line_tag;
       }
 
       function parseEndLine () {
-        var end_line_tag = indentBy(2) + '</line>' + linefeed;
+        var end_line_tag = indentBy(2) + '</offensiveLine>' + linefeed;
         return end_line_tag;
       }
 
-      function parseEnd ( total ) {
-        var end_body_tag = indentBy(1) + '</body>' + linefeed,
-            start_footer_tag = indentBy(1) + '<footer>' + linefeed,
-            total_offenses_tag = indentBy(2) + '<totalOffenses>' + total +
+      function parseFooter ( total ) {
+        var total_offenses_tag = indentBy(2) + '<totalOffenses>' + total +
                               '</totalOffenses>' + linefeed,
-            end_footer_tag = indentBy(1) + '</footer>' + linefeed,
-            end_file_tag = '</file>' + linefeed;
+            end_file_tag = indentBy(1) + '</offensiveFile>' + linefeed;
+        return total_offenses_tag + end_file_tag;
+      }
 
-        return end_body_tag + start_footer_tag + total_offenses_tag +
-                end_footer_tag + end_file_tag;
+      function parseEnd () {
+        var end_file_tag = '</inlineOffenses>' + linefeed;
+        return end_file_tag;
       }
 
       return {
+        parseStart: function () {
+          return parseStart ();
+        },
         parseHeader: function ( header ) {
           return parseHeader ( header );
         },
-        parseStartLine: function () {
-          return parseStartLine ();
+        parseStartLine: function ( row ) {
+          return parseStartLine ( row );
         },
-        parseLocation: function ( name, row, col  ) {
-          return parseLocation ( name, row, col );
+        parseLocation: function ( name, col  ) {
+          return parseLocation ( name, col );
         },
         parseSource: function ( source ) {
           return parseSource ( source );
@@ -574,8 +655,104 @@ module.exports = function( grunt ) {
         parseEndLine: function () {
           return parseEndLine ();
         },
-        parseEnd: function ( footer ) {
-          return parseEnd ( footer );
+        parseFooter: function ( footer ) {
+          return parseFooter( footer );
+        },
+        parseEnd: function () {
+          return parseEnd ();
+        }
+      };
+    })();
+
+    /* Parses the given text into a JSON format. Note that it allows for
+    *  trailing commas by ECMA standard. THIS WILL NOT WORK IN IE AS OF
+    *  NOW.
+    */
+    var JSONParser = (function () {
+
+      function bracket ( indent, brace ) {
+        return indentBy(indent) + brace + linefeed;
+      }
+
+      function parseStart () {
+        var inline_offenses_object = '{ "inline-offenses": {' + linefeed,
+            offensive_files_object = indentBy(1) + '"offensive-files": [' +
+                                        linefeed;
+        return inline_offenses_object + offensive_files_object;
+      }
+
+      function parseHeader ( filepath ) {
+        var filepath_object = indentBy(3) + '"filepath": "' + filepath + '",' +
+                                linefeed,
+            offensive_line_object = indentBy(3) + '"offensive-line": [' +
+                                    linefeed;
+        return bracket(2,'{') + filepath_object +
+                offensive_line_object;
+      }
+
+      function parseStartLine ( line_num ) {
+        var line_number_object = indentBy(5) + '"line-number": ' + line_num +
+            ',' + linefeed,
+            offensive_column_object = indentBy(5) + '"offensive-column": [' +
+                                      linefeed;
+        return bracket(4,'{') + line_number_object + offensive_column_object;
+      }
+
+      function parseLocation ( column_type, column_num ) {
+        var type_object = indentBy(7) + '"type": "' + column_type +
+                        '",' + linefeed,
+            col_object = indentBy(7) + '"column": ' + column_num + linefeed,
+            offense_object = bracket(6,'{') + type_object + col_object +
+                          bracket(6,'},');
+        return offense_object;
+      }
+
+      function parseSource ( line ) {
+        var offensive_column_close = indentBy(5) + '],' + linefeed,
+            line_object = indentBy(5) + '"line": "' + line + '"' + linefeed;
+        return offensive_column_close + line_object;
+      }
+
+      function parseEndLine () {
+        return bracket(4,'},');
+      }
+
+      function parseFooter ( total ) {
+        var offensive_line_close = indentBy(3) + '],' + linefeed,
+            total_offenses_object = indentBy(3) + '"total-offenses": ' +
+                                    total + linefeed;
+        return offensive_line_close + total_offenses_object + bracket(2,'},');
+      }
+
+      function parseEnd () {
+        var offensive_files_close = indentBy(1) + ']' + linefeed;
+        return offensive_files_close + '} }';
+      }
+
+      return {
+        parseStart: function () {
+          return parseStart ();
+        },
+        parseHeader: function ( header ) {
+          return parseHeader ( header );
+        },
+        parseStartLine: function ( row ) {
+          return parseStartLine ( row );
+        },
+        parseLocation: function ( name, col  ) {
+          return parseLocation ( name, col );
+        },
+        parseSource: function ( source ) {
+          return parseSource ( source );
+        },
+        parseEndLine: function () {
+          return parseEndLine ();
+        },
+        parseFooter: function ( footer ) {
+          return parseFooter( footer );
+        },
+        parseEnd: function () {
+          return parseEnd ();
         }
       };
     })();
@@ -586,13 +763,14 @@ module.exports = function( grunt ) {
     ***************************************************************************
     ***************************************************************************
     *
-    *  Reader object that reads a file using a source and a parser object.
-    *  In more detail, this reader accesses assembler to get the required
-    *  information it needs from a file and then parses it into a format
+    *  Reader object that reads a collections of files using a source and a
+    *  parser object.
+    *  In more detail, this reader accesses each input file to get the required
+    *  information it needs from it and then parses it into a format
     *  dictated by the injected parser.
     *
     *  Interface Reader {
-    *    
+    *    read ( input, parser );
     *  }
     *
     ***************************************************************************
@@ -601,9 +779,7 @@ module.exports = function( grunt ) {
     **************************************************************************/
     var OffendingFilesReader = (function () {
 
-      var parsed_files_collection = null;
-
-      function readEachColumn ( offending_line, line_num, parser ) {
+      function readEachColumn ( offending_line, parser ) {
         var offending_column,
             column_number,
             column_type,
@@ -611,9 +787,8 @@ module.exports = function( grunt ) {
         while (offending_line.hasNext()) {
           offending_column = offending_line.getNext();
           column_number = offending_column.getColumnNumber();
-          column_type = offending_column.getColumnType();
+          column_type = offending_column.getOffenseType();
           output += parser.parseLocation(column_type,
-                                          line_num,
                                           column_number);
         }
         offending_line.resetPointer();
@@ -621,143 +796,220 @@ module.exports = function( grunt ) {
       }
 
       function readEachLine ( offending_file, parser ) {
-        var offending_line,
+        var filepath,
+            offending_line,
             line,
             line_num,
-            output = '';
-        while (offending_file.hasNext()) {
-          offending_line = offending_file.getNext();
-          line = offending_line.getLine();
-          line_num = offending_line.getLineNumber();
-          output += parser.parseStartLine() + readEachColumn(offending_line,
-                                                             line_num,
-                                                             parser);
-          output += parser.parseSource(line) + parser.parseEndLine();
+            output;
+        filepath = offending_file.getFilePath();
+        output = parser.parseHeader(filepath);
+        if(offending_file.getLength() === 0) {
+          output += parser.parseFooter(offending_file.getTotalOffenses());
+        } else {
+          while (offending_file.hasNext()) {
+            offending_line = offending_file.getNext();
+            line = offending_line.getLine();
+            line_num = offending_line.getLineNumber();
+            output += parser.parseStartLine(line_num) +
+                      readEachColumn(offending_line, parser);
+            output += parser.parseSource(line) + parser.parseEndLine();
+          }
+          offending_file.resetPointer();
+          output += parser.parseFooter(offending_file.getTotalOffenses());
         }
-        offending_file.resetPointer();
         return output;
       }
 
-      function readEachFile ( input, parser ) {
-        var offending_file,
-            output,
-            filepath,
-            outputs = [];
-        while(input.hasNext()) {
-          offending_file = input.getNext();
-          filepath = offending_file.getFilePath();
-          output = parser.parseHeader(filepath);
-          if(offending_file.getLength() === 0) {
-            output += parser.parseEnd(offending_file.getTotalOffenses());
-          } else {
-            output += readEachLine( offending_file, parser ) +
-                      parser.parseEnd(offending_file.getTotalOffenses());
+      function readEachFile ( assembled_files_collection, parser ) {
+        var parsed_files_collection = new Collection(),
+            parsed_file;
+        parsed_files_collection.addElement(parser.parseStart());
+        while (assembled_files_collection.hasNext()){
+            parsed_file = readEachLine(assembled_files_collection.getNext(),
+                                      parser);
+            parsed_files_collection.addElement(parsed_file);
           }
-          outputs.push(output);
-        }
-        input.resetPointer();
-        return outputs;
+          assembled_files_collection.resetPointer();
+        parsed_files_collection.addElement(parser.parseEnd());
+        return parsed_files_collection;
       }
 
       return {
         read: function ( input, parser ) {
-          parsed_files_collection = readEachFile( input, parser );
-          return true;
-        },
-        getParsedFile: function ( file_index ) {
-          return parsed_files_collection[file_index];
-        },
-        getParsedFilesLength: function () {
-          if (parsed_files_collection !== null) {
-            return parsed_files_collection.length;
-          } else { return -1; }
+          return readEachFile( input, parser );
         }
       };
     })();
 
-    /*Takes the parsed results array that represents each input file and
-    outputs them either to standard output or to a specified output file from
-    the options.*/
+    /**************************************************************************
+    ***************************************************************************
+    ***************************************************************************
+    ***************************************************************************
+    *
+    *  Reporter object that takes an input and reports it to standard output
+    *  and/or an output file.
+    *
+    *  Interface Reporter {
+    *    report ( destination, input, [options,]);
+    *  }
+    *
+    ***************************************************************************
+    ***************************************************************************
+    ***************************************************************************
+    **************************************************************************/
     var Reporter = (function () {
 
-      function outputReadFiles ( dest, reader, toFile ) {
-        var output_file = '',
-            parsed_file,
-            it = 0;
-        while (it < reader.getParsedFilesLength()) {
-          parsed_file = reader.getParsedFile(it);
-          if(toFile) {
-            output_file = output_file + parsed_file;
+      function reportParsedFiles ( dest, input, to_file ) {
+        var parsed_file,
+            output_file = '';
+        while (input.hasNext()) {
+          parsed_file = input.getNext();
+          if(to_file) {
+            output_file += parsed_file;
           } else {
             grunt.log.write(parsed_file); 
           }
-          it++; 
         }
-        if(toFile) {
+        input.resetPointer();
+        if(to_file) {
           grunt.file.write(dest.dest, output_file);
           grunt.log.writeln(('File "' + dest.dest + '" created.').white.bold);
         }
       }
 
       return {
-        customOutputOffenses: function ( customOutput ) {
-          customOutput();
-        },
-        outputOffenses: function ( dest, reader, toFile ) {
-          outputReadFiles (dest, reader, toFile);
+        report: function ( destination, input, to_file ) {
+          reportParsedFiles (destination, input, to_file);
           return true;
         }
       };
 
     })();
 
-    this.files.forEach( function ( file_block ) {
-      var files = file_block.src.filter( function ( filepath ) {
-          if (!grunt.file.exists(filepath)) {
-            grunt.log.writeln('Source file "' + filepath + '" not found.');
-            return false;
-          } else {
-            return true;
-          }
-        });
+    /**************************************************************************
+    ***************************************************************************
+    ***************************************************************************
+    ***************************************************************************
+    *
+    *  Client object that executes all parts of the plugin while also taking
+    *  into account user-defined options.
+    *
+    *  Interface Client {
+    *    execute ();
+    *  }
+    *
+    ***************************************************************************
+    ***************************************************************************
+    ***************************************************************************
+    **************************************************************************/
+    var Client = (function () {
+
+      function fileLoader ( file_block ) {
         var input_files_collection = new Collection(),
-            assembled_file,
-            assembled_files_collection;
+            files = file_block.src.filter( function ( filepath ) {
+              if (!grunt.file.exists(filepath)) {
+                grunt.log.writeln('Source file "' + filepath + '" not found.');
+                return false;
+              } else {
+                return true;
+              }
+            });
         for(var filepath in files){
-          input_files_collection.addElement({
+            input_files_collection.addElement({
                                         path: files[filepath],
                                         data: grunt.file.read(files[filepath])
-                                            });
+                                              });
         }
-        if(files.length > 0){
-          if(options.reporter.to_file === undefined){
-            options.reporter.to_file = true;
-          }
-          if(options.reporter.tag === (undefined || 'default')) {
-            OffendingColumnsFinder.changeTabWidth(4);
+        return input_files_collection;
+      }
+
+      function parserSwitch ( tag ) {
+        var parser;
+        switch (tag.toString().toLowerCase())
+        {
+          case 'json':
+            parser = JSONParser;
+            break;
+          case 'xml':
+            parser = MinimalXMLParser;
+            break;
+          case 'plaintext':
+            parser = PlainTextParser;
+            break;
+          case 'decoratedplaintext':
+            parser = DecoratedPlainTextParser;
+            break;
+          default:
+            parser = PlainTextParser;
+        }
+        return parser;
+      }
+
+      function isUndefinedOptions () {
+        if(options.reporter.to_file === undefined &&
+           options.reporter.to_file !== false){
+          options.reporter.to_file = true;
+        }
+        if(options.reporter.stout === undefined ||
+           options.reporter.stout === false){
+          options.reporter.stout = 'default';
+        }
+        if(options.reporter.output === undefined ||
+           options.reporter.output === false){
+          options.reporter.output = 'default';
+        }
+        if(options.assembler.tabwidth !== undefined &&
+           typeof options.assembler.tabwidth === 'number'){
+          options.assembler.tabwidth = 4;
+        }
+      }
+
+      function run () {
+        _self.files.forEach( function ( file_block ) {
+          var input_files_collection = fileLoader(file_block),
+              assembled_file,
+              parsed_file,
+              assembled_files_collection,
+              parsed_files_collection;
+          if(input_files_collection.getLength() > 0) {
+            isUndefinedOptions();
+
             assembled_files_collection = new Collection();
-            while (input_files_collection.hasNext()) {
-              assembled_file = 
-                OffendingFileDataAssembler.assemble(
-                  input_files_collection.getNext(),
-                  OffendingColumnsFinder);
-              assembled_files_collection.addElement(assembled_file);
-            }
+              while (input_files_collection.hasNext()) {
+                assembled_file = 
+                  OffendingFileDataAssembler.assemble(
+                    input_files_collection.getNext(),
+                    OffendingColumnsByLineFinder);
+                assembled_files_collection.addElement(assembled_file);
+              }
             input_files_collection.resetPointer();
-            OffendingFilesReader.read(assembled_files_collection,
-                                      FormattedPlainTextParser);
-            Reporter.outputOffenses(file_block, OffendingFilesReader);
-            if(options.reporter.to_file === true &&
-               options.reporter.to_file.length === undefined) {
-              OffendingFilesReader.read(assembled_files_collection,
-                                        MinimalXMLParser);
-              Reporter.outputOffenses(file_block, OffendingFilesReader, true);
+
+            parsed_files_collection = OffendingFilesReader.read(
+                                  assembled_files_collection,
+                                  parserSwitch(options.reporter.stout));
+            Reporter.report(file_block, parsed_files_collection);
+
+            if(options.to_file === true &&
+               options.to_file.length === undefined) {
+              parsed_files_collection = OffendingFilesReader.read(
+                                  assembled_files_collection,
+                                  parserSwitch(options.reporter.output));
+              Reporter.report(file_block,
+                                      parsed_files_collection,
+                                      true);
             }
-          } else {
-            Reporter.customOutputOffenses(function() {grunt.log.writeln('hi');});
           }
+        });
+      }
+
+      return {
+        execute: function () {
+          run ();
         }
-      });
+      };
+    })();
+
+    Client.execute();
   });
 
 };

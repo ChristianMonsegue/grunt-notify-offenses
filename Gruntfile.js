@@ -32,13 +32,14 @@ module.exports = function(grunt) {
     notify_inline_offenses: {
       default_options: {
         options: {
+          to_file: true,
           reporter: {
-            tag: 'default',
+            stout: 'xml',
+            output: 'json'
           }
         },
         files: {
-          'tmp/remittence': ['C:/workspace/AM/EHR/billing/**/*.html'],
-          'tmp/inlinet': ['test/fixtures/inline2.html']
+          'tmp/remittence': ['C:/workspace/AM/EHR/HM/**/*.html']
         },
       }
     },
