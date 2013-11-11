@@ -228,7 +228,7 @@ module.exports = function( grunt ) {
       /* Holds objects with key type and pattern in a collection as search
       *  criteria for offenses.
       */
-      var patterns =
+      var pre_defined_offenses =
       [
         {
           type: 'CSS',
@@ -242,13 +242,18 @@ module.exports = function( grunt ) {
         }
       ];
 
+      /* A list of offense types that will override the pre-defined offenses
+      *  given that the override options is set to true.
+      */
       var overriding_types = [];
+
 
       function doesTypeExist ( type ) {
         var index = 0,
             exists = false;
-        while (index < patterns.length && !exists) {
-          if(patterns[index].type.toUpperCase() === type.toUpperCase()){
+        while (index < pre_defined_offenses.length && !exists) {
+          if(pre_defined_offenses[index].type.toUpperCase() ===
+             type.toUpperCase()){
             exists = true;
           }
           index++;
@@ -260,10 +265,11 @@ module.exports = function( grunt ) {
         var index = 0,
             exists = false,
             pattern = -1;
-        while (index < patterns.length && !exists) {
-          if(patterns[index].type.toUpperCase() === type.toUpperCase()){
+        while (index < pre_defined_offenses.length && !exists) {
+          if(pre_defined_offenses[index].type.toUpperCase() ===
+             type.toUpperCase()){
             exists = true;
-            pattern = patterns[index].pattern;
+            pattern = pre_defined_offenses[index].pattern;
           }
           index++;
         }
@@ -274,16 +280,23 @@ module.exports = function( grunt ) {
         var index = 0,
             exists = false,
             pattern = -1;
-        while (index < patterns.length && !exists) {
-          if(patterns[index].type.toUpperCase() === type.toUpperCase()){
+        while (index < pre_defined_offenses.length && !exists) {
+          if(pre_defined_offenses[index].type.toUpperCase() ===
+             type.toUpperCase()){
             exists = true;
-            pattern = patterns[index].message;
+            pattern = pre_defined_offenses[index].message;
           }
           index++;
         }
         return pattern;
       }
 
+      /* Retrieve modifiers from the user-defined regexp pattern.
+      *
+      *  @param type:    An array of regexp modifiers.
+      *
+      *  returns         A normalized array of supported regexp modifiers.
+      */
       function getModifiers ( modifiers ) {
         var modifier_list = [];
         for (var mod in modifiers) {
@@ -318,6 +331,14 @@ module.exports = function( grunt ) {
         return no_dup_cols;
       }
 
+      /* Adds an additional backslash character to each single and double
+      *  quotes in the user-defined pattern.
+      *
+      *  @param pattern:    The pattern from a user-defined offense.
+      *
+      *  returns        The search pattern with all single and double quotes
+      *                 double escaped.
+      */
       function escapeAllQuotes ( pattern ) {
         var escaped_pattern = pattern.replace(/\'/g,"\\'");
         return escaped_pattern.replace(/\"/g,'\\"');
@@ -338,6 +359,8 @@ module.exports = function( grunt ) {
       *                             in the given line.
       *  @param message [optional]: A message giving more information about
       *                             the offense.
+      *
+      *  returns      An array of offending column objects
       */
       function findOffendingColumns ( line, type, pattern, message ) {
           var defined_pattern,
@@ -378,10 +401,13 @@ module.exports = function( grunt ) {
       *  offenses. Note that user-defined offense types are matched as
       *  case-insensitive, so "css" = "CSS".
       *
-      *  @param line: a line in a file to be searched for offending columns
-      *  @param offenses [optional]: a list of objects or a single object that
+      *  @param line: A line in a file to be searched for offending columns.
+      *  @param offenses [optional]: A list of objects or a single object that
       *                              a user provides with defined types and
       *                              patterns.
+      *
+      *  returns     An array of offending column objects containing the
+      *              user-defined offenses and/or the pre-defined offenses.
       */
       function createOffendingColumnsList ( line, offenses ) {
         var merge_columns,
@@ -409,13 +435,13 @@ module.exports = function( grunt ) {
         */
         if(offenses === undefined ||
           (offenses !== undefined && options.finder.force)) {
-          for (var j in patterns) {
+          for (var j in pre_defined_offenses) {
               if(overriding_types.indexOf(
-                            patterns[j].type.toUpperCase()) === -1) {
+                      pre_defined_offenses[j].type.toUpperCase()) === -1) {
                 merge_columns = findOffendingColumns(line,
-                                                      patterns[j].type,
-                                                      patterns[j].pattern,
-                                                      patterns[j].message);
+                                              pre_defined_offenses[j].type,
+                                              pre_defined_offenses[j].pattern,
+                                              pre_defined_offenses[j].message);
                 columns = columns.concat(merge_columns);
               }
           }
