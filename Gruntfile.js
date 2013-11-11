@@ -33,8 +33,7 @@ module.exports = function(grunt) {
         options: {
           to_file: true,
           reporter: {
-            stout: 'decoratedplaintext',
-            output: 'json'
+            stout: 'decoratedplaintext'
           },
           finder: {
             override: true,
@@ -52,7 +51,8 @@ module.exports = function(grunt) {
           }
         },
         files: {
-          'tmp/remittence': ['C:/Users/christian.monsegue/Documents/GruntPlugins/test/fixtures/inline1.html']
+          'tmp/inlinet': ['C:/Users/christian.monsegue/Documents/GruntPlugins/test/fixtures/inline1.html'],
+          'tmp/remittence': ['C:/workspace/AM/EHR/HM/**/*.html']
         },
       }
     }

@@ -617,13 +617,13 @@ module.exports = function( grunt ) {
     var PlainTextParser = (function () {
 
       function parseStart () {
-        return linefeed;
+        return '';
       }
 
       function parseHeader ( filepath ) {
         var check_file_text = 
               '[Checking for offenses in file: ' + filepath + ']';
-        return block_space + check_file_text + linefeed;
+        return check_file_text + linefeed;
       }
 
       function parseStartLine ( line_num ) {
@@ -648,11 +648,11 @@ module.exports = function( grunt ) {
         return hr + block_space;
       }
       function parseFooter ( total ) {
-        return 'Number of Offenses: ' + total + block_space;
+        return 'Number of Offenses: ' + total + block_space + linefeed;
       }
 
       function parseEnd () {
-        return linefeed;
+        return '';
       }
 
       return {
@@ -687,13 +687,13 @@ module.exports = function( grunt ) {
     var DecoratedPlainTextParser = (function () {
 
       function parseStart () {
-        return linefeed;
+        return '';
       }
 
       function parseHeader ( filepath ) {
         var check_file_text =
             ('[Checking for offenses in file: ' + filepath +']').magenta.bold;
-        return block_space + check_file_text + linefeed;
+        return check_file_text + linefeed;
       }
 
       function parseStartLine ( line_num ) {
@@ -719,11 +719,12 @@ module.exports = function( grunt ) {
       }
       function parseFooter ( total ) {
         //Add empty string to total to convert to a String and use formatting
-        return 'Number of Offenses: ' + (total+'').green.bold + block_space;
+        return 'Number of Offenses: ' + (total+'').green.bold + block_space +
+                linefeed;
       }
 
       function parseEnd () {
-        return linefeed;
+        return '';
       }
 
       return {

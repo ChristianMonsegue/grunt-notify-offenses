@@ -17,18 +17,18 @@ Once the plugin has been installed, it may be enabled inside your Gruntfile with
 grunt.loadNpmTasks('grunt-notify-inline-offenses');
 ```
 
-## The "notify_inline_css" task
+## The "notify_inline_offenses" task
 
 ### Overview
-In your project's Gruntfile, add a section named `notify_inline_css` to the data object passed into `grunt.initConfig()`.
+In your project's Gruntfile, add a section named `notify_inline_offenses` to the data object passed into `grunt.initConfig()`.
 
 ```js
 grunt.initConfig({
-  notify_inline_css: {
+  notify_inline_offenses: {
     options: {
       // Task-specific options go here.
     },
-    your_target: {
+    files: {
       // Target-specific file lists and/or options go here.
     },
   },
@@ -36,6 +36,8 @@ grunt.initConfig({
 ```
 
 ### Options
+
+##Finder Options
 
 #### options.separator
 Type: `String`
