@@ -26,14 +26,17 @@ module.exports = function( grunt ) {
         stout: 'default',
         output: 'default'
       },
-      assembler: {
-        tabwidth: 4,
+      finder: {
         offenses: {
           "CSS": [],
           "Align": []
         }
+      },
+      assembler: {
+        tabwidth: 4
       }
     });
+
 
     /* Line formatting using grunt's cross-browser linefeed utility and
     *  a general horizontal line for parser purposes.
@@ -42,9 +45,6 @@ module.exports = function( grunt ) {
         block_space = linefeed + linefeed + linefeed,
         hr = '______________________________________________________' +
           linefeed;
-
-    /*Default tab-width*/
-    var tabwidth = 4;
 
     /* Helper function to indent a line by (amount * 2) \s characters to
     *  to make the output more readable.
@@ -70,10 +70,8 @@ module.exports = function( grunt ) {
     *  @param chars: the number of \s characters to set the tab width to
     */
     function convertTabToTabWidth ( chars ) {
-      var spaces_in_tabwidth = '',
-          width = chars;
-      if(typeof width === "string") { width = +(width); } 
-      for (var i = 0; i < width; i++) {
+      var spaces_in_tabwidth = '';
+      for (var i = 0; i < chars; i++) {
         spaces_in_tabwidth += ' ';
       }
       return spaces_in_tabwidth;
@@ -282,6 +280,19 @@ module.exports = function( grunt ) {
         return modifier_list;
       }
 
+      function removeDuplicates ( columns ) {
+        var no_duplicates = {},
+            no_dup_cols = [];
+        for (var i = 0; i < columns.length; i++) {
+          no_duplicates[columns[i].getOffenseType()] =
+                    columns[i].getColumnNumber();
+        }
+        for(var type in no_duplicates) {
+          no_dup_cols.push(new OffendingColumn(type, no_duplicates[type]));
+        }
+        return no_dup_cols;
+      }
+
       function escapeAllQuotes ( pattern ) {
         var escaped_pattern = pattern.replace(/\'/g,"\\'");
         return escaped_pattern.replace(/\"/g,'\\"');
@@ -335,7 +346,9 @@ module.exports = function( grunt ) {
       */
       function createOffendingColumnsList ( line, offenses ) {
         var merge_columns,
-            columns = [];
+            columns = [],
+            force = false;
+        //If user-defined offenses are given, process those first
         if(offenses !== undefined) {
           
           for (var type in offenses) {
@@ -346,8 +359,15 @@ module.exports = function( grunt ) {
             columns = columns.concat(merge_columns);
           }
         }
-        if(columns.length === 0) {
-          //Default search for pre-defined offenses from the patterns object
+        /* Default search for pre-defined offenses from the patterns object.
+        *  This search only occurs if the user does not give user-defined
+        *  offenses or if they set the 'force' option to true, which always
+        *  through the pre-defined offenses regardless of the presence of
+        *  user-defined offenses.
+        */
+        if(offenses === undefined ||
+          (offenses !== undefined && options.finder.force === true)) {
+          force = true;
           for (var j in patterns) {
               merge_columns = findOffendingColumns(line,
                                                     patterns[j].type,
@@ -355,13 +375,15 @@ module.exports = function( grunt ) {
               columns = columns.concat(merge_columns);
           }
         }
-        /* Filters all duplicates if they exist. This handles the case if
+        if(offenses === undefined || options.finder.force === false) {
+          return columns;
+        } else {
+          /* Removes all duplicates if they exist. This handles the case if
         *  the user omits the pattern from his offense set, thus making
         *  the search see if it exists in the pre-defined offenses.
         */
-        return columns.filter(function(elem, pos) {
-            return columns.indexOf(elem) === pos;
-        });
+          return removeDuplicates(columns);
+        }
       }
 
       return {
@@ -416,7 +438,7 @@ module.exports = function( grunt ) {
                                                 options.assembler.tabwidth));
             if(new_tab_line.trim().length > 0) {
               offending_columns =
-                finder.find(new_tab_line, options.assembler.offenses);
+                finder.find(new_tab_line, options.finder.offenses);
               if(offending_columns.length > 0) {
                 offending_line = new OffendingLine(new_tab_line.trim(),
                                                    (+j) + 1);
@@ -978,11 +1000,18 @@ module.exports = function( grunt ) {
            options.reporter.output === false){
           options.reporter.output = 'default';
         }
+        if(options.finder === undefined){
+          options.finder = {};
+        }
+        if(options.finder.force === undefined ||
+           typeof options.finder.force !== 'boolean'){
+          options.finder.force = true;
+        }
         if(options.assembler === undefined){
           options.assembler = {};
         }
-        if(options.assembler.tabwidth !== undefined &&
-           typeof options.assembler.tabwidth === 'number'){
+        if(options.assembler.tabwidth === undefined ||
+           typeof options.assembler.tabwidth !== 'number'){
           options.assembler.tabwidth = 4;
         }
       }

@@ -36,7 +36,7 @@ module.exports = function(grunt) {
             stout: 'json',
             output: 'xml'
           },
-          assembler: {
+          finder: {
             offenses : {
               "CSS": [],
               "Test": ['bloop[\\s\\t]*=[\\s\\t]*(\"|\')[\\s\\ta-z0-9\\-\\:\\;{}\\/\\(\\)\\+\\=\\&\\%\\#\\@\\!\\,\\$_\"\']*(\"|\')', 'global', 'case-insensitive']
