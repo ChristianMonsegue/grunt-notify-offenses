@@ -27,32 +27,26 @@ module.exports = function(grunt) {
       tests: ['tmp'],
     },
 
-    // Configuration to be run (and then tested).
+    // Configuration to be run.
     notify_inline_offenses: {
-      default_options: {
+      default: {
         options: {
-          to_file: true,
-          reporter: {
-            stout: 'decoratedplaintext'
+          save: false,
+          stout: 'plaintext',
+          output: 'plaintext',
+          override: false,
+          offenses : {
+            "bloop": {
+              message: 'Erroneous attribute.',
+              pattern: ['bloop[\\s\\t]*=[\\s\\t]*(\"|\')[\\s\\ta-z0-9\\-\\:\\;{}\\/\\(\\)\\+\\=\\&\\%\\#\\@\\!\\,\\$_\"\']*(\"|\')', 'global', 'i']
+            }
           },
-          finder: {
-            override: true,
-            offenses : {
-              "bloop": {
-                          message: 'Erroneous attribute.',
-                          pattern: ['bloop[\\s\\t]*=[\\s\\t]*(\"|\')[\\s\\ta-z0-9\\-\\:\\;{}\\/\\(\\)\\+\\=\\&\\%\\#\\@\\!\\,\\$_\"\']*(\"|\')', 'global', 'i']
-                      }
-            },
-            force: true
-          },
-          assembler: {
-            tabwidth: 4,
-            trim_lines: 'trailing'
-          }
+          force: true,
+          tabwidth: 4,
+          cleaner: 'trailing'
         },
         files: {
-          'tmp/inlinet': ['C:/Users/christian.monsegue/Documents/GruntPlugins/test/fixtures/inline1.html'],
-          'tmp/remittence': ['C:/workspace/AM/EHR/HM/**/*.html']
+          'tmp/inline-result': ['test/fixtures/inline1.html']
         },
       }
     }

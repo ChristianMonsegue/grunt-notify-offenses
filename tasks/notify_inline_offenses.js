@@ -21,26 +21,20 @@ module.exports = function( grunt ) {
 
     // Merge task-specific and/or target-specific options with these defaults.
     var options = this.options({
-      to_file: true,
-      reporter: {
-        stout: 'default',
-        output: 'default'
-      },
-      finder: {
-        offenses: {
-          "CSS": {
-            message: '',
-            pattern: []
-          },
-          "Align": {}
+      save: false,
+      stout: 'plaintext',
+      output: 'plaintext',
+      offenses: {
+        "CSS": {
+          message: '',
+          pattern: []
         },
-        force: true,
-        override: false
+        "Align": {}
       },
-      assembler: {
-        tabwidth: 4,
-        trim_lines: 'trailing'
-      }
+      force: true,
+      override: false,
+      tabwidth: 4,
+      cleaner: 'trailing'
     });
 
 
@@ -194,7 +188,8 @@ module.exports = function( grunt ) {
     function OffendingColumn ( type, column, message ) {
       this._type = type || 'No type defined';
       this._column = column || -1;
-      this._message = message || ' ';
+      this._message = typeof message === 'string' ?
+                      message : ' ';
     }
     OffendingColumn.prototype.getOffenseType = function () {
       return this._type;
@@ -203,7 +198,7 @@ module.exports = function( grunt ) {
       return this._column;
     };
     OffendingColumn.prototype.getMessage = function () {
-      return this._message;
+      return this._message.toString();
     };
 
     /**************************************************************************
@@ -369,8 +364,8 @@ module.exports = function( grunt ) {
               pattern_modifiers = ['g', 'i'],
               columns = [];
           if(Array.isArray(pattern) && pattern.length > 0 &&
-              (!doesTypeExist(type) || options.finder.override)) {
-            if(options.finder.override &&
+              (!doesTypeExist(type) || options.override)) {
+            if(options.override &&
                overriding_types.indexOf(type.toUpperCase()) === -1) {
               overriding_types.push(type.toUpperCase());
             }
@@ -434,7 +429,7 @@ module.exports = function( grunt ) {
         *  user-defined offenses will be overriden.
         */
         if(offenses === undefined ||
-          (offenses !== undefined && options.finder.force)) {
+          (offenses !== undefined && options.force)) {
           for (var j in pre_defined_offenses) {
               if(overriding_types.indexOf(
                       pre_defined_offenses[j].type.toUpperCase()) === -1) {
@@ -446,7 +441,8 @@ module.exports = function( grunt ) {
               }
           }
         }
-        if(offenses === undefined || !options.finder.force) {
+        overriding_types = [];
+        if(offenses === undefined || !options.force) {
           return columns;
         } else {
         /* Removes all duplicates if they exist. This handles the case if
@@ -504,37 +500,37 @@ module.exports = function( grunt ) {
       }
 
       function trimmer ( line ) {
-        var trim_option = options.assembler.trim_lines || 'default';
-        var trimmed_line = line;
-        switch(trim_option.toLowerCase())
+        var cleaner_option = options.cleaner || 'default';
+        var cleaned_line = line;
+        switch(cleaner_option.toLowerCase())
         {
           case 'none':
-          trimmed_line = line;
+          cleaned_line = line;
           break;
           case 'trailing':
-          trimmed_line = line.trim();
+          cleaned_line = line.trim();
           break;
           case 'all':
-          trimmed_line = line.replace(/\s|\t/gi, '');
+          cleaned_line = line.replace(/\s|\t/gi, '');
           break;
           case 'all-tabs':
-          trimmed_line = line.replace(/\t/gi, '');
+          cleaned_line = line.replace(/\t/gi, '');
           break;
           case 'all-spaces':
-          trimmed_line = line.replace(/\s/gi, '');
+          cleaned_line = line.replace(/\s/gi, '');
           break;
           default:
-          trimmed_line = line.trim();
+          cleaned_line = line.trim();
           break;
         }
-        return trimmed_line;
+        return cleaned_line;
       }
 
       function assembleOffendingLine ( line, line_num, finder ) {
         var trimmed_line,
             offending_line,
             offending_columns =
-                finder.find(line, options.finder.offenses);
+                finder.find(line, options.offenses);
         if(offending_columns.length > 0) {
           trimmed_line = trimmer(line);
           offending_line = new OffendingLine(trimmed_line, line_num);
@@ -565,8 +561,8 @@ module.exports = function( grunt ) {
               lines = file.data.split(linefeed),
               offending_file = new OffendingFile(file.path);
           for(var j in lines){
-            tabwidth = (typeof options.assembler.tabwidth === 'number') ?
-                        options.assembler.tabwidth : 4;
+            tabwidth = (typeof options.tabwidth === 'number') ?
+                        options.tabwidth : 4;
             //Converts all tab indentations into the specified tab width
             new_tab_line = lines[j].replace(/^\t/,
                                          convertTabToTabWidth(tabwidth));
@@ -1054,7 +1050,7 @@ module.exports = function( grunt ) {
           }
         }
         input.resetPointer();
-        if(to_file) {
+        if(to_file && dest.dest !== undefined) {
           grunt.file.write(dest.dest, output_file);
           grunt.log.writeln(('File "' + dest.dest + '" created.').white.bold);
         }
@@ -1130,7 +1126,7 @@ module.exports = function( grunt ) {
           case 'json':
             parser = JSONParser;
             break;
-          case 'xml':
+          case 'minimalxml':
             parser = MinimalXMLParser;
             break;
           case 'plaintext':
@@ -1149,20 +1145,17 @@ module.exports = function( grunt ) {
       *  default values. Will be replaced later with cleaner code
       */
       function undefinedToDefault () {
-        if(options.to_file === undefined &&
-           options.to_file !== false){
-          options.to_file = true;
+        if(options.save === undefined ||
+           typeof options.save !== 'boolean'){
+          options.save = false;
         }
-        if(options.finder === undefined){
-          options.finder = {};
+        if(options.override === undefined ||
+           typeof options.override !== 'boolean'){
+          options.override = false;
         }
-        if(options.finder.override === undefined ||
-           typeof options.finder.override !== 'boolean'){
-          options.finder.override = false;
-        }
-        if(options.finder.force === undefined ||
-           typeof options.finder.force !== 'boolean'){
-          options.finder.force = true;
+        if(options.force === undefined ||
+           typeof options.force !== 'boolean'){
+          options.force = true;
         }
       }
 
@@ -1206,19 +1199,23 @@ module.exports = function( grunt ) {
 
             parsed_files_collection = OffendingFilesReader.read(
                                   assembled_files_collection,
-                                  parserSwitch(options.reporter.stout ||
-                                               'default'));
+                                  parserSwitch(options.stout ||
+                                               'plaintext'));
             Reporter.report(file_block, parsed_files_collection);
 
-            if(options.to_file === true &&
-               options.to_file.length === undefined) {
+            if(options.save === true && file_block.dest !== undefined) {
               parsed_files_collection = OffendingFilesReader.read(
                                   assembled_files_collection,
-                                  parserSwitch(options.reporter.output ||
-                                               'default'));
+                                  parserSwitch(options.output ||
+                                               'plaintext'));
               Reporter.report(file_block,
                                       parsed_files_collection,
                                       true);
+            } else if(options.save === true && file_block.dest === undefined) {
+              //Eventually replace this with ErrorLog Object functions
+              grunt.log.writeln(
+                    ('WARNING: No destination file path was specified!').
+                    red.bold);
             }
           }
         });

@@ -1,6 +1,6 @@
 {
   "name": "grunt-notify-inline-offenses",
-  "description": "Searches through a list of files and notifies on all declarative inline css.",
+  "description": "Searches through a list of files and notifies on all declarative inline offenses.",
   "version": "0.1.0",
   "homepage": "https://github.com/christian.monsegue/gruntplugins",
   "author": {
