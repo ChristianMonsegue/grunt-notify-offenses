@@ -35,21 +35,21 @@ grunt.initConfig({
 })
 ```
 
-### Options
+## Options
 
-##Finder Options
+###Finder Options
 
-#### options.separator
-Type: `String`
-Default value: `',  '`
+#### options.finder.override
+Type: `Boolean`
+Default value: `false`
 
-A string value that is used to do something with whatever.
+A boolean value that determines if the user-defined offenses will override the pre-defined offenses given that their types are equivalent, regardless of case. For example, if the type of a user-defined offense is "css", and the overwrite option is set to true, then the pre-defined "CSS" offense will be overridden. Keep in mind that overriding will ONLY work if the user-defined offense has both a type and valid pattern, else it will fall back to the pre-defined offense of the same type.
 
-#### options.punctuation
-Type: `String`
-Default value: `'.'`
+#### options.finder.offenses
+Type: `Object Literal`
+Default value: `{}`
 
-A string value that is used to do something else with whatever else.
+An object literal that contains each user-defined offense. The key of each entry is the type and the value is another object literal that contains a `String` message and an 'Array' pattern. The pattern itself should have the regular expression at the first index, and at every subsequent index is a regex modifier.
 
 ### Usage Examples
 
