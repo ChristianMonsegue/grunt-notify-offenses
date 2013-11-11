@@ -529,8 +529,10 @@ module.exports = function( grunt ) {
       function assembleOffendingLine ( line, line_num, finder ) {
         var trimmed_line,
             offending_line,
+            offenses = Object.getOwnPropertyNames(options.offenses).length ===
+                        0 ? undefined : options.offenses,
             offending_columns =
-                finder.find(line, options.offenses);
+                finder.find(line, offenses);
         if(offending_columns.length > 0) {
           trimmed_line = trimmer(line);
           offending_line = new OffendingLine(trimmed_line, line_num);
@@ -1214,7 +1216,7 @@ module.exports = function( grunt ) {
             } else if(options.save === true && file_block.dest === undefined) {
               //Eventually replace this with ErrorLog Object functions
               grunt.log.writeln(
-                    ('WARNING: No destination file path was specified!').
+                    ('WARNING: No destination file path was specified! Skipping "save" option!').
                     red.bold);
             }
           }

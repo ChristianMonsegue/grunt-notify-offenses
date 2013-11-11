@@ -31,9 +31,9 @@ module.exports = function(grunt) {
     notify_inline_offenses: {
       default: {
         options: {
-          save: false,
-          stout: 'plaintext',
-          output: 'plaintext',
+          save: true,
+          stout: 'decoratedplaintext',
+          output: 'json',
           override: false,
           offenses : {
             "bloop": {
