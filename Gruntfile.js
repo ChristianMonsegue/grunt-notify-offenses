@@ -37,17 +37,18 @@ module.exports = function(grunt) {
             output: 'json'
           },
           finder: {
+            override: true,
             offenses : {
-              "CSS": [],
               "bloop": {
-                          message: 'This is only a test.',
-                          pattern: ['bloop[\\s\\t]*=[\\s\\t]*(\"|\')[\\s\\ta-z0-9\\-\\:\\;{}\\/\\(\\)\\+\\=\\&\\%\\#\\@\\!\\,\\$_\"\']*(\"|\')', 'global', 'case-insensitive']
+                          message: 'Erroneous attribute.',
+                          pattern: ['bloop[\\s\\t]*=[\\s\\t]*(\"|\')[\\s\\ta-z0-9\\-\\:\\;{}\\/\\(\\)\\+\\=\\&\\%\\#\\@\\!\\,\\$_\"\']*(\"|\')', 'global', 'i']
                       }
             },
             force: true
           },
           assembler: {
-            tabwidth: 5
+            tabwidth: 4,
+            trim_lines: 'trailing'
           }
         },
         files: {

@@ -34,10 +34,12 @@ module.exports = function( grunt ) {
           },
           "Align": {}
         },
-        force: true
+        force: true,
+        override: false
       },
       assembler: {
-        tabwidth: 4
+        tabwidth: 4,
+        trim_lines: 'trailing'
       }
     });
 
@@ -53,8 +55,9 @@ module.exports = function( grunt ) {
     /* Helper function to indent a line by (amount * 2) \s characters to
     *  to make the output more readable.
     *
-    *  @param amount: the number of \s characters multiplied by 2 to indent
-    *                 by
+    *  @param amount: The number to indent by.
+    *
+    *  returns        The amount of \s characters to indent by * 2.
     */
     function indentBy ( amount ) {
       var indent = '',
@@ -64,21 +67,6 @@ module.exports = function( grunt ) {
         it++;
       }
       return indent;
-    }
-
-    /* Helper function to convert all tab indentation into spaces equivalent
-    *  to the tab width based on the indentation option. This works in
-    *  tandem with the indentation option of JSHint so columns will be
-    *  calculated based on a correctly linted file.
-    *
-    *  @param chars: the number of \s characters to set the tab width to
-    */
-    function convertTabToTabWidth ( chars ) {
-      var spaces_in_tabwidth = '';
-      for (var i = 0; i < chars; i++) {
-        spaces_in_tabwidth += ' ';
-      }
-      return spaces_in_tabwidth;
     }
     
     /**************************************************************************
@@ -90,7 +78,8 @@ module.exports = function( grunt ) {
     *  variables and accompanying methods for interacting with a general
     *  collection of similar data. This super class will be extended by various
     *  more specialized derived classes for different parts of the offending
-    *  files.
+    *  files. If the parameter is undefined, the class will give the variable a
+    *  default value.
     *
     *  Interface Collection {
     *    addElement ( element );
@@ -141,12 +130,13 @@ module.exports = function( grunt ) {
     /* OffendingFile "subclass" for creating OffendingFile objects which
     *  contains the filepath and a collection of the offending lines in an
     *  offenses array needed to read and parse later. These objects are later
-    *  stored in a collection object.
+    *  stored in a collection object. If the parameter is undefined, the class
+    *  will give the variable a default value.
     *
     *  Extends: Collection
     *
-    *  @param path: the path to the file in which the extracted
-    *               data pertains to
+    *  @param path: The path to the file in which the extracted
+    *               data pertains to.
     */
     function OffendingFile ( path ) {
       Collection.call( this );
@@ -168,12 +158,14 @@ module.exports = function( grunt ) {
     /* OffendingLine "subclass" for creating OffendingLine objects which
     *  contains the offense information needed to read and parse later. These
     *  objects are later stored in an OffendingFile object as a collection.
+    *  If a parameter is undefined, the class will give its variables a
+    *  default value.
     *
     *  Extends: Collection
     *
-    *  @param line: the line that contains offenses
-    *  @param line_num: the line number of the offending line in the
-    *                   offending file
+    *  @param line: The line that contains offenses.
+    *  @param line_num: The line number of the offending line in the
+    *                   offending file.
     */
     function OffendingLine ( line, line_num ) {
       Collection.call( this );
@@ -190,25 +182,28 @@ module.exports = function( grunt ) {
     OffendingLine.prototype = new Collection();
 
     /* OffendingColumn "class" for creating OffendingColumn objects that
-    *  contains the type and column number. These objects are later
-    *  stored in an OffendingLine object as a collection.
+    *  contains the type column number and message. These objects are later
+    *  stored in an OffendingLine object as a collection. If a parameter is
+    *  undefined, the class will give its variables a default value.
     *
-    *  @param type: the type of the offense starting at the column
-    *  @param column: the column number where the offense begins
+    *  @param type: The type of the offense starting at the column.
+    *  @param column: The column number where the offense begins.
+    *  @param message:  The message that gives additional information about
+    *                   the offense.
     */
     function OffendingColumn ( type, column, message ) {
-      this.type = type || 'No type defined';
-      this.column = column || -1;
-      this.message = message || ' ';
+      this._type = type || 'No type defined';
+      this._column = column || -1;
+      this._message = message || ' ';
     }
     OffendingColumn.prototype.getOffenseType = function () {
-      return this.type;
+      return this._type;
     };
     OffendingColumn.prototype.getColumnNumber = function () {
-      return this.column;
+      return this._column;
     };
     OffendingColumn.prototype.getMessage = function () {
-      return this.message;
+      return this._message;
     };
 
     /**************************************************************************
@@ -247,7 +242,9 @@ module.exports = function( grunt ) {
         }
       ];
 
-      function doesTypeExist (type) {
+      var overriding_types = [];
+
+      function doesTypeExist ( type ) {
         var index = 0,
             exists = false;
         while (index < patterns.length && !exists) {
@@ -259,7 +256,7 @@ module.exports = function( grunt ) {
         return exists;
       }
 
-      function getPattern (type) {
+      function getPattern ( type ) {
         var index = 0,
             exists = false,
             pattern = -1;
@@ -273,7 +270,7 @@ module.exports = function( grunt ) {
         return pattern;
       }
 
-      function getMessage (type) {
+      function getMessage ( type ) {
         var index = 0,
             exists = false,
             pattern = -1;
@@ -330,12 +327,17 @@ module.exports = function( grunt ) {
       *  index of said offense + 1 to offset array indexing. Each column of
       *  an offense creates a Column object that holds the type of offense
       *  and the column number. Additionally, each Column object is pushed
-      *  into an array of columns.
+      *  into an array of columns. If a type exists in the pre-defined
+      *  object of patterns, this method will use the pre-defined object
+      *  for the offense instead rather than the user-defined set. This can be
+      *  overridden by setting the 'override' option to true.
       *
-      *  @param line: a line in a file to be searched for offending columns
-      *  @param type: the type of offense to search for in the given line
-      *  @param pattern [optional]: a pattern to search for as an offense
-      *                             in the given line
+      *  @param line: A line in a file to be searched for offending columns.
+      *  @param type: The type of offense to search for in the given line.
+      *  @param pattern [optional]: A pattern to search for as an offense
+      *                             in the given line.
+      *  @param message [optional]: A message giving more information about
+      *                             the offense.
       */
       function findOffendingColumns ( line, type, pattern, message ) {
           var defined_pattern,
@@ -344,7 +346,11 @@ module.exports = function( grunt ) {
               pattern_modifiers = ['g', 'i'],
               columns = [];
           if(Array.isArray(pattern) && pattern.length > 0 &&
-              !doesTypeExist(type)) {
+              (!doesTypeExist(type) || options.finder.override)) {
+            if(options.finder.override &&
+               overriding_types.indexOf(type.toUpperCase()) === -1) {
+              overriding_types.push(type.toUpperCase());
+            }
             if(pattern.length > 1){
               pattern_modifiers = getModifiers(pattern.slice(1));
             }
@@ -379,8 +385,7 @@ module.exports = function( grunt ) {
       */
       function createOffendingColumnsList ( line, offenses ) {
         var merge_columns,
-            columns = [],
-            force = false;
+            columns = [];
         //If user-defined offenses are given, process those first
         if(offenses !== undefined) {
           
@@ -395,25 +400,30 @@ module.exports = function( grunt ) {
         }
         /* Default search for pre-defined offenses from the patterns object.
         *  This search only occurs if the user does not give user-defined
-        *  offenses or if they set the 'force' option to true, which always
-        *  through the pre-defined offenses regardless of the presence of
-        *  user-defined offenses.
+        *  offenses, gives all erroneous user-defined offenses or if they set
+        *  the 'force' option to true, which always finds the pre-defined
+        *  offenses regardless of the presence of user-defined offenses.
+        *  There is also concessions for the 'override' option where if it is
+        *  set to true, then the pre-defined offenses of the same type as
+        *  user-defined offenses will be overriden.
         */
         if(offenses === undefined ||
-          (offenses !== undefined && options.finder.force === true)) {
-          force = true;
+          (offenses !== undefined && options.finder.force)) {
           for (var j in patterns) {
-              merge_columns = findOffendingColumns(line,
-                                                    patterns[j].type,
-                                                    patterns[j].pattern,
-                                                    patterns[j].message);
-              columns = columns.concat(merge_columns);
+              if(overriding_types.indexOf(
+                            patterns[j].type.toUpperCase()) === -1) {
+                merge_columns = findOffendingColumns(line,
+                                                      patterns[j].type,
+                                                      patterns[j].pattern,
+                                                      patterns[j].message);
+                columns = columns.concat(merge_columns);
+              }
           }
         }
-        if(offenses === undefined || options.finder.force === false) {
+        if(offenses === undefined || !options.finder.force) {
           return columns;
         } else {
-          /* Removes all duplicates if they exist. This handles the case if
+        /* Removes all duplicates if they exist. This handles the case if
         *  the user omits the pattern from his offense set, thus making
         *  the search see if it exists in the pre-defined offenses.
         */
@@ -452,15 +462,76 @@ module.exports = function( grunt ) {
     **************************************************************************/
     var OffendingFileDataAssembler = (function () {
 
+      /* Helper function to convert all tab indentation into spaces equivalent
+      *  to the tab width based on the indentation option. This works in
+      *  tandem with the indentation option of JSHint so columns will be
+      *  calculated based on a correctly linted file.
+      *
+      *  @param chars: The number of \s characters to set the tab width ton
+      */
+      function convertTabToTabWidth ( chars ) {
+        var spaces_in_tabwidth = '';
+        for (var i = 0; i < chars; i++) {
+          spaces_in_tabwidth += ' ';
+        }
+        return spaces_in_tabwidth;
+      }
+
+      function trimmer ( line ) {
+        var trim_option = options.assembler.trim_lines || 'default';
+        var trimmed_line = line;
+        switch(trim_option.toLowerCase())
+        {
+          case 'none':
+          trimmed_line = line;
+          break;
+          case 'trailing':
+          trimmed_line = line.trim();
+          break;
+          case 'all':
+          trimmed_line = line.replace(/\s|\t/gi, '');
+          break;
+          case 'all-tabs':
+          trimmed_line = line.replace(/\t/gi, '');
+          break;
+          case 'all-spaces':
+          trimmed_line = line.replace(/\s/gi, '');
+          break;
+          default:
+          trimmed_line = line.trim();
+          break;
+        }
+        return trimmed_line;
+      }
+
+      function assembleOffendingLine ( line, line_num, finder ) {
+        var trimmed_line,
+            offending_line,
+            offending_columns =
+                finder.find(line, options.finder.offenses);
+        if(offending_columns.length > 0) {
+          trimmed_line = trimmer(line);
+          offending_line = new OffendingLine(trimmed_line, line_num);
+          for (var i in offending_columns) {
+                    offending_line.addElement(offending_columns[i]);
+          }
+        } else {
+          offending_line = false;
+        }
+        return offending_line;
+      }
+
       /* Assembles an offending file's data by combining, as parts,
       *  the offending file, the offending line and offending columns into a
       *  comprehensive data object.
-      *  @param file: the offending file from the given path to be assembled
+      *  @param file: The offending file from the given path to be assembled
       *               with the attained data.
-      *  @param finder: the finder object that gives the collection of
+      *  @param finder: The finder object that gives the collection of
       *                 offending columns.
+      *
+      *  returns      The assembled data of the offending file.
       */
-      function assembleOffenseData( file, finder ) {
+      function assembleOffendingFile ( file, finder ) {
           var offending_line,
               offending_columns,
               new_tab_line,
@@ -474,22 +545,19 @@ module.exports = function( grunt ) {
             new_tab_line = lines[j].replace(/^\t/,
                                          convertTabToTabWidth(tabwidth));
             if(new_tab_line.trim().length > 0) {
-              offending_columns =
-                finder.find(new_tab_line, options.finder.offenses);
-              if(offending_columns.length > 0) {
-                offending_line = new OffendingLine(new_tab_line.trim(),
-                                                   (+j) + 1);
-                for (var i in offending_columns) {
-                  offending_line.addElement(offending_columns[i]);
+                offending_line = assembleOffendingLine(new_tab_line,
+                                                       (+j) + 1,
+                                                       finder);
+                if(offending_line !== false) {
+                  offending_file.addElement(offending_line);
                 }
-                offending_file.addElement(offending_line);
-              } } }
+            } }
           return offending_file;
       }
 
     return {
       assemble: function ( base, operator ) {
-        return assembleOffenseData(base, operator);
+        return assembleOffendingFile(base, operator);
       }
     };
 
@@ -554,7 +622,6 @@ module.exports = function( grunt ) {
         return hr + block_space;
       }
       function parseFooter ( total ) {
-        //Add empty string to total to convert to a String and use formatting
         return 'Number of Offenses: ' + total + block_space;
       }
 
@@ -993,6 +1060,15 @@ module.exports = function( grunt ) {
     **************************************************************************/
     var Client = (function () {
 
+      /* Loads the files given by the user in and saves their filepath and data
+      *  in a collection.
+      *
+      *  @param file_block:  The "output: input" element of the files object
+      *                      provided through the gruntfile that will be read.
+      *
+      *  returns             A collection containing the filepath and data of
+      *                      each file.
+      */
       function fileLoader ( file_block ) {
         var input_files_collection = new Collection(),
             files = file_block.src.filter( function ( filepath ) {
@@ -1012,6 +1088,14 @@ module.exports = function( grunt ) {
         return input_files_collection;
       }
 
+      /* A case/switch function that determines which parser to use given
+      *  the option provided by the user. It will default to the
+      *  Decorated PlainText Parser on any erroneous or undefined option.
+      *
+      *  @param tag:  The user option that determines the parser to be used.
+      *
+      *  returns      The parser object that corresponds with the parameter.
+      */
       function parserSwitch ( tag ) {
         var parser;
         switch (tag.toString().toLowerCase())
@@ -1034,6 +1118,9 @@ module.exports = function( grunt ) {
         return parser;
       }
 
+      /* Checks for undefined or erroneous options and gives them
+      *  default values. Will be replaced later with cleaner code
+      */
       function undefinedToDefault () {
         if(options.to_file === undefined &&
            options.to_file !== false){
@@ -1042,35 +1129,53 @@ module.exports = function( grunt ) {
         if(options.finder === undefined){
           options.finder = {};
         }
+        if(options.finder.override === undefined ||
+           typeof options.finder.override !== 'boolean'){
+          options.finder.override = false;
+        }
         if(options.finder.force === undefined ||
            typeof options.finder.force !== 'boolean'){
           options.finder.force = true;
         }
-        if(options.assembler === undefined){
-          options.assembler = {};
-        }
       }
 
+      /* Builds the collection that holds all the files with their
+      *  assembled data on offenses. Each assembled file is created
+      *  using the OffendingFileDataAssembler object assemble() function.
+      *
+      *  @param collection:  The collection of input files to be used for
+      *                      assembling the offense data.
+      *
+      *  returns             A collection of all the assembled offense data.
+      */
+      function buildAssembledFilesCollection ( collection ) {
+        var assembled_file,
+            assembled_files_collection = new Collection();
+        while (collection.hasNext()) {
+          assembled_file = 
+            OffendingFileDataAssembler.assemble(
+              collection.getNext(),
+              OffendingColumnsByLineFinder);
+          assembled_files_collection.addElement(assembled_file);
+        }
+        collection.resetPointer();
+        return assembled_files_collection;
+      }
+
+      /* Runs the needed functions of this js file given by the user options
+      *  and/or default options of the gruntfile.
+      */
       function run () {
         _self.files.forEach( function ( file_block ) {
-          var input_files_collection = fileLoader(file_block),
-              assembled_file,
-              parsed_file,
-              assembled_files_collection,
-              parsed_files_collection;
+          var assembled_files_collection,
+              parsed_files_collection,
+              input_files_collection = fileLoader(file_block);
           if(input_files_collection.getLength() > 0) {
 
             undefinedToDefault();
 
-            assembled_files_collection = new Collection();
-              while (input_files_collection.hasNext()) {
-                assembled_file = 
-                  OffendingFileDataAssembler.assemble(
-                    input_files_collection.getNext(),
-                    OffendingColumnsByLineFinder);
-                assembled_files_collection.addElement(assembled_file);
-              }
-            input_files_collection.resetPointer();
+            assembled_files_collection =
+                  buildAssembledFilesCollection(input_files_collection);
 
             parsed_files_collection = OffendingFilesReader.read(
                                   assembled_files_collection,
@@ -1099,6 +1204,7 @@ module.exports = function( grunt ) {
       };
     })();
 
+    //Command to execute the gruntfile js functions.
     Client.execute();
   });
 
