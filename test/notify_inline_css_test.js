@@ -27,7 +27,7 @@ exports.notify_inline_css = {
     // setup here if necessary
     done();
   },
-  default_options: function(test) {
+  default: function(test) {
     test.expect(1);
 
     var actual = grunt.file.read('tmp/inlinef');

@@ -114,7 +114,7 @@ Cleans each line of the input file(s) of whitespaces based on a given option:
 
 #### stout
 Type: `String` _optional_
-Default value: `plaintext`
+Default value: `'plaintext'`
 
 Determines how the output will be printed through standard output.
 
@@ -125,7 +125,7 @@ Determines how the output will be printed through standard output.
 
 #### output
 Type: `String` _optional_
-Default value: `plaintext`
+Default value: `'plaintext'`
 
 Determines how the output will be written to an output file.
 

@@ -46,7 +46,7 @@ module.exports = function(grunt) {
           cleaner: 'trailing'
         },
         files: {
-          'tmp/inline-result': ['test/fixtures/inline1.html']
+          'tmp/inline-result': ['test/fixtures/*.html']
         },
       }
     }
