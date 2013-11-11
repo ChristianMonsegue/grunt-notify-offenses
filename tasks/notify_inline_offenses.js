@@ -329,9 +329,9 @@ module.exports = function( grunt ) {
       *  case-insensitive, so "css" = "CSS".
       *
       *  @param line: a line in a file to be searched for offending columns
-      *  @param items [optional]: a list of objects or a single object that a
-      *                            user provides with defined types and
-      *                            patterns.
+      *  @param offenses [optional]: a list of objects or a single object that
+      *                              a user provides with defined types and
+      *                              patterns.
       */
       function createOffendingColumnsList ( line, offenses ) {
         var merge_columns,
@@ -689,7 +689,7 @@ module.exports = function( grunt ) {
     *  NOW.
     */
     var JSONParser = (function () {
-
+      //Private helper function for bracket formatting
       function bracket ( indent, brace ) {
         return indentBy(indent) + brace + linefeed;
       }
