@@ -241,7 +241,7 @@ module.exports = function( grunt ) {
         var index = 0,
             exists = false;
         while (index < patterns.length && !exists) {
-          if(patterns[index].type.toLowerCase() === type.toLowerCase()){
+          if(patterns[index].type.toUpperCase() === type.toUpperCase()){
             exists = true;
           }
           index++;
@@ -254,7 +254,7 @@ module.exports = function( grunt ) {
             exists = false,
             pattern = -1;
         while (index < patterns.length && !exists) {
-          if(patterns[index].type === type){
+          if(patterns[index].type.toUpperCase() === type.toUpperCase()){
             exists = true;
             pattern = patterns[index].pattern;
           }
@@ -281,14 +281,16 @@ module.exports = function( grunt ) {
       }
 
       function removeDuplicates ( columns ) {
-        var no_duplicates = {},
+        var col_data,
+            no_duplicates = {},
             no_dup_cols = [];
         for (var i = 0; i < columns.length; i++) {
-          no_duplicates[columns[i].getOffenseType()] =
-                    columns[i].getColumnNumber();
+          no_duplicates[columns[i].getOffenseType() +
+                        ':__:' + columns[i].getColumnNumber()] = 0;
         }
         for(var type in no_duplicates) {
-          no_dup_cols.push(new OffendingColumn(type, no_duplicates[type]));
+          col_data = type.split(':__:');
+          no_dup_cols.push(new OffendingColumn(col_data[0], col_data[1]));
         }
         return no_dup_cols;
       }
@@ -314,7 +316,8 @@ module.exports = function( grunt ) {
               result,
               pattern_modifiers = ['g', 'i'],
               columns = [];
-          if(Array.isArray(pattern) && pattern.length > 0) {
+          if(Array.isArray(pattern) && pattern.length > 0 &&
+              !doesTypeExist(type)) {
             if(pattern.length > 1){
               pattern_modifiers = getModifiers(pattern.slice(1));
             }
@@ -328,7 +331,8 @@ module.exports = function( grunt ) {
             }
           }
           while ( (result = style_pattern.exec(line)) ) {
-                columns.push(new OffendingColumn(type, result.index + 1));
+                columns.push(new OffendingColumn(type.toUpperCase(),
+                                                  result.index + 1));
           }
           return columns;
         }
