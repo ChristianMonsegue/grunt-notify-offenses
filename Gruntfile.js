@@ -33,18 +33,25 @@ module.exports = function(grunt) {
         options: {
           to_file: true,
           reporter: {
-            stout: 'json',
-            output: 'xml'
+            stout: 'decoratedplaintext',
+            output: 'json'
           },
           finder: {
             offenses : {
               "CSS": [],
-              "bloop": ['bloop[\\s\\t]*=[\\s\\t]*(\"|\')[\\s\\ta-z0-9\\-\\:\\;{}\\/\\(\\)\\+\\=\\&\\%\\#\\@\\!\\,\\$_\"\']*(\"|\')', 'global', 'case-insensitive']
-            }
+              "bloop": {
+                          message: 'This is only a test.',
+                          pattern: ['bloop[\\s\\t]*=[\\s\\t]*(\"|\')[\\s\\ta-z0-9\\-\\:\\;{}\\/\\(\\)\\+\\=\\&\\%\\#\\@\\!\\,\\$_\"\']*(\"|\')', 'global', 'case-insensitive']
+                      }
+            },
+            force: true
+          },
+          assembler: {
+            tabwidth: 5
           }
         },
         files: {
-          'tmp/remittence': ['C:/Users/C_Trini/Documents/GitHub/GruntPlugins/test/fixtures/inline1.html']
+          'tmp/remittence': ['C:/Users/christian.monsegue/Documents/GruntPlugins/test/fixtures/inline1.html']
         },
       }
     }

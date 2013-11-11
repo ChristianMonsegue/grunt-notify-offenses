@@ -21,16 +21,20 @@ module.exports = function( grunt ) {
 
     // Merge task-specific and/or target-specific options with these defaults.
     var options = this.options({
-      to_file: false,
+      to_file: true,
       reporter: {
         stout: 'default',
         output: 'default'
       },
       finder: {
         offenses: {
-          "CSS": [],
-          "Align": []
-        }
+          "CSS": {
+            message: '',
+            pattern: []
+          },
+          "Align": {}
+        },
+        force: true
       },
       assembler: {
         tabwidth: 4
@@ -192,15 +196,19 @@ module.exports = function( grunt ) {
     *  @param type: the type of the offense starting at the column
     *  @param column: the column number where the offense begins
     */
-    function OffendingColumn ( type, column ) {
+    function OffendingColumn ( type, column, message ) {
       this.type = type || 'No type defined';
       this.column = column || -1;
+      this.message = message || ' ';
     }
     OffendingColumn.prototype.getOffenseType = function () {
       return this.type;
     };
     OffendingColumn.prototype.getColumnNumber = function () {
       return this.column;
+    };
+    OffendingColumn.prototype.getMessage = function () {
+      return this.message;
     };
 
     /**************************************************************************
@@ -229,11 +237,13 @@ module.exports = function( grunt ) {
       [
         {
           type: 'CSS',
-          pattern: /style[\s\t]*=[\s\t]*(\"|\')[\s\ta-z0-9\-\:\;{}\\\/\(\)\+\=\&\%\#\@\!\,\$_\"\']*(\"|\')/gi
+          pattern: /style[\s\t]*=[\s\t]*(\"|\')[\s\ta-z0-9\-\:\;{}\\\/\(\)\+\=\&\%\#\@\!\,\$_\"\']*(\"|\')/gi,
+          message: 'Style attributes should belong in a .css or .less file.'
         },
         {
           type: 'Align',
-          pattern: /align[\s\t]*=[\s\t]*(\"|\')[\s\ta-z0-9\-\:\;{}\\\/\(\)\+\=\&\%\#\@\!\,\$_\"\']*(\"|\')/gi
+          pattern: /align[\s\t]*=[\s\t]*(\"|\')[\s\ta-z0-9\-\:\;{}\\\/\(\)\+\=\&\%\#\@\!\,\$_\"\']*(\"|\')/gi,
+          message: 'Align attributes should belong in a .css or .less file.'
         }
       ];
 
@@ -263,6 +273,20 @@ module.exports = function( grunt ) {
         return pattern;
       }
 
+      function getMessage (type) {
+        var index = 0,
+            exists = false,
+            pattern = -1;
+        while (index < patterns.length && !exists) {
+          if(patterns[index].type.toUpperCase() === type.toUpperCase()){
+            exists = true;
+            pattern = patterns[index].message;
+          }
+          index++;
+        }
+        return pattern;
+      }
+
       function getModifiers ( modifiers ) {
         var modifier_list = [];
         for (var mod in modifiers) {
@@ -286,11 +310,13 @@ module.exports = function( grunt ) {
             no_dup_cols = [];
         for (var i = 0; i < columns.length; i++) {
           no_duplicates[columns[i].getOffenseType() +
-                        ':__:' + columns[i].getColumnNumber()] = 0;
+          '&~:__:~&' + columns[i].getColumnNumber()] = columns[i].getMessage();
         }
         for(var type in no_duplicates) {
-          col_data = type.split(':__:');
-          no_dup_cols.push(new OffendingColumn(col_data[0], col_data[1]));
+          col_data = type.split('&~:__:~&');
+          no_dup_cols.push(new OffendingColumn(col_data[0],
+                                              col_data[1],
+                                              no_duplicates[type]));
         }
         return no_dup_cols;
       }
@@ -311,9 +337,10 @@ module.exports = function( grunt ) {
       *  @param pattern [optional]: a pattern to search for as an offense
       *                             in the given line
       */
-      function findOffendingColumns ( line, type, pattern ) {
-          var style_pattern,
+      function findOffendingColumns ( line, type, pattern, message ) {
+          var defined_pattern,
               result,
+              defined_message = message,
               pattern_modifiers = ['g', 'i'],
               columns = [];
           if(Array.isArray(pattern) && pattern.length > 0 &&
@@ -321,18 +348,20 @@ module.exports = function( grunt ) {
             if(pattern.length > 1){
               pattern_modifiers = getModifiers(pattern.slice(1));
             }
-            style_pattern = new RegExp(escapeAllQuotes(pattern[0]),
+            defined_pattern = new RegExp(escapeAllQuotes(pattern[0]),
                                         pattern_modifiers.join(''));
           } else {
             if(doesTypeExist(type)){
-              style_pattern = getPattern(type);
+              defined_pattern = getPattern(type);
+              defined_message = getMessage(type);
             } else {
               return columns;
             }
           }
-          while ( (result = style_pattern.exec(line)) ) {
+          while ( (result = defined_pattern.exec(line)) ) {
                 columns.push(new OffendingColumn(type.toUpperCase(),
-                                                  result.index + 1));
+                                                  result.index + 1,
+                                                  defined_message));
           }
           return columns;
         }
@@ -358,8 +387,9 @@ module.exports = function( grunt ) {
           for (var type in offenses) {
             if (!offenses.hasOwnProperty(type)) { continue; }
             merge_columns = findOffendingColumns(line,
-                                                    type,
-                                                    offenses[type]);
+                                                type,
+                                                offenses[type].pattern || [],
+                                                offenses[type].message || ' ');
             columns = columns.concat(merge_columns);
           }
         }
@@ -375,7 +405,8 @@ module.exports = function( grunt ) {
           for (var j in patterns) {
               merge_columns = findOffendingColumns(line,
                                                     patterns[j].type,
-                                                    patterns[j].pattern);
+                                                    patterns[j].pattern,
+                                                    patterns[j].message);
               columns = columns.concat(merge_columns);
           }
         }
@@ -433,13 +464,15 @@ module.exports = function( grunt ) {
           var offending_line,
               offending_columns,
               new_tab_line,
+              tabwidth,
               lines = file.data.split(linefeed),
               offending_file = new OffendingFile(file.path);
           for(var j in lines){
+            tabwidth = (typeof options.assembler.tabwidth === 'number') ?
+                        options.assembler.tabwidth : 4;
             //Converts all tab indentations into the specified tab width
             new_tab_line = lines[j].replace(/^\t/,
-                                         convertTabToTabWidth(
-                                                options.assembler.tabwidth));
+                                         convertTabToTabWidth(tabwidth));
             if(new_tab_line.trim().length > 0) {
               offending_columns =
                 finder.find(new_tab_line, options.finder.offenses);
@@ -474,7 +507,7 @@ module.exports = function( grunt ) {
          parseStart();
     *    parseHeader ( header );
     *    parseStartLine ( row );
-    *    parseLocation ( name, col );
+    *    parseLocation ( name, col, msg );
     *    parseSource ( source );
     *    parseEndLine ();
          parseFooter ( footer );
@@ -504,12 +537,13 @@ module.exports = function( grunt ) {
                 linefeed + hr;
       }
 
-      function parseLocation ( column_type,  column_num ) {
+      function parseLocation ( column_type,  column_num, column_message ) {
         var arrow_text = indentBy(2) + '-> ',
-            location_text = 'C' + column_num;
-        return arrow_text + column_type +
-                ' attribute located at column: ' + location_text + '.' +
-                linefeed;
+            location_text = 'C' + column_num,
+            attribute_loc = ' attribute located at column: ' + location_text +
+                            '.' + linefeed,
+            message = indentBy(3) + column_message + linefeed;
+        return arrow_text + column_type + attribute_loc + message;
       }
 
       function parseSource ( line ) {
@@ -538,8 +572,8 @@ module.exports = function( grunt ) {
         parseStartLine: function ( row ) {
           return parseStartLine ( row );
         },
-        parseLocation: function ( name, col  ) {
-          return parseLocation ( name, col );
+        parseLocation: function ( name, col, msg  ) {
+          return parseLocation ( name, col, msg );
         },
         parseSource: function ( source ) {
           return parseSource ( source );
@@ -574,12 +608,13 @@ module.exports = function( grunt ) {
                 ('L' + line_num).white.bold + linefeed + hr;
       }
 
-      function parseLocation ( column_type, column_num ) {
+      function parseLocation ( column_type, column_num, column_message ) {
         var arrow_text = indentBy(2) + ('-> ').yellow.bold,
-            location_text = ('C' + column_num).white.bold;
-        return arrow_text + column_type +
-                ' attribute located at column: ' + location_text + '.' +
-                linefeed;
+            location_text = ('C' + column_num).white.bold,
+            attribute_loc = ' attribute located at column: ' + location_text +
+                            '.' + linefeed,
+            message = indentBy(3) + (column_message).yellow.bold + linefeed;
+        return arrow_text + column_type + attribute_loc + message;
       }
 
       function parseSource ( line ) {
@@ -608,8 +643,8 @@ module.exports = function( grunt ) {
         parseStartLine: function ( row ) {
           return parseStartLine ( row );
         },
-        parseLocation: function ( name, col  ) {
-          return parseLocation ( name, col );
+        parseLocation: function ( name, col, msg  ) {
+          return parseLocation ( name, col, msg );
         },
         parseSource: function ( source ) {
           return parseSource ( source );
@@ -647,14 +682,16 @@ module.exports = function( grunt ) {
         return start_line_tag + line_number_tag;
       }
 
-      function parseLocation ( column_type, column_num ) {
+      function parseLocation ( column_type, column_num, column_message ) {
         var type_tag = indentBy(4) + '<type>"' + column_type +
                         '"</type>' +
                         linefeed,
             col_tag = indentBy(4) + '<column>' + column_num +
                       '</column>' + linefeed,
+            msg_tag = indentBy(4) + '<message>' + column_message +
+                      '</message>' + linefeed,
             offense_tag = indentBy(3) + '<offensiveColumn>' + linefeed +
-                          type_tag + col_tag + indentBy(3) +
+                          type_tag + col_tag + msg_tag + indentBy(3) +
                           '</offensiveColumn>' + linefeed;
         return offense_tag;
       }
@@ -692,8 +729,8 @@ module.exports = function( grunt ) {
         parseStartLine: function ( row ) {
           return parseStartLine ( row );
         },
-        parseLocation: function ( name, col  ) {
-          return parseLocation ( name, col );
+        parseLocation: function ( name, col, msg  ) {
+          return parseLocation ( name, col, msg );
         },
         parseSource: function ( source ) {
           return parseSource ( source );
@@ -744,12 +781,15 @@ module.exports = function( grunt ) {
         return bracket(4,'{') + line_number_object + offensive_column_object;
       }
 
-      function parseLocation ( column_type, column_num ) {
+      function parseLocation ( column_type, column_num, column_message ) {
         var type_object = indentBy(7) + '"type": "' + column_type +
                         '",' + linefeed,
-            col_object = indentBy(7) + '"column": ' + column_num + linefeed,
+            col_object = indentBy(7) + '"column": ' + column_num + ',' +
+                          linefeed,
+            msg_object = indentBy(7) + '"message": "' + column_message +
+                          '"' + linefeed,
             offense_object = bracket(6,'{') + type_object + col_object +
-                          bracket(6,'},');
+                              msg_object + bracket(6,'},');
         return offense_object;
       }
 
@@ -785,8 +825,8 @@ module.exports = function( grunt ) {
         parseStartLine: function ( row ) {
           return parseStartLine ( row );
         },
-        parseLocation: function ( name, col  ) {
-          return parseLocation ( name, col );
+        parseLocation: function ( name, col, msg  ) {
+          return parseLocation ( name, col, msg );
         },
         parseSource: function ( source ) {
           return parseSource ( source );
@@ -829,13 +869,16 @@ module.exports = function( grunt ) {
         var offending_column,
             column_number,
             column_type,
+            column_message,
             output = '';
         while (offending_line.hasNext()) {
           offending_column = offending_line.getNext();
           column_number = offending_column.getColumnNumber();
           column_type = offending_column.getOffenseType();
+          column_message = offending_column.getMessage();
           output += parser.parseLocation(column_type,
-                                          column_number);
+                                          column_number,
+                                          column_message);
         }
         offending_line.resetPointer();
         return output;
@@ -996,14 +1039,6 @@ module.exports = function( grunt ) {
            options.to_file !== false){
           options.to_file = true;
         }
-        if(options.reporter.stout === undefined ||
-           options.reporter.stout === false){
-          options.reporter.stout = 'default';
-        }
-        if(options.reporter.output === undefined ||
-           options.reporter.output === false){
-          options.reporter.output = 'default';
-        }
         if(options.finder === undefined){
           options.finder = {};
         }
@@ -1013,10 +1048,6 @@ module.exports = function( grunt ) {
         }
         if(options.assembler === undefined){
           options.assembler = {};
-        }
-        if(options.assembler.tabwidth === undefined ||
-           typeof options.assembler.tabwidth !== 'number'){
-          options.assembler.tabwidth = 4;
         }
       }
 
@@ -1028,6 +1059,7 @@ module.exports = function( grunt ) {
               assembled_files_collection,
               parsed_files_collection;
           if(input_files_collection.getLength() > 0) {
+
             undefinedToDefault();
 
             assembled_files_collection = new Collection();
@@ -1042,14 +1074,16 @@ module.exports = function( grunt ) {
 
             parsed_files_collection = OffendingFilesReader.read(
                                   assembled_files_collection,
-                                  parserSwitch(options.reporter.stout));
+                                  parserSwitch(options.reporter.stout ||
+                                               'default'));
             Reporter.report(file_block, parsed_files_collection);
 
             if(options.to_file === true &&
                options.to_file.length === undefined) {
               parsed_files_collection = OffendingFilesReader.read(
                                   assembled_files_collection,
-                                  parserSwitch(options.reporter.output));
+                                  parserSwitch(options.reporter.output ||
+                                               'default'));
               Reporter.report(file_block,
                                       parsed_files_collection,
                                       true);
