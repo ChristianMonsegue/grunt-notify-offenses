@@ -22,15 +22,15 @@ var grunt = require('grunt');
     test.ifError(value)
 */
 
-exports.notify_inline_css = {
+exports.notify_offenses = {
   setUp: function(done) {
     // setup here if necessary
     done();
   },
-  default: function(test) {
+  test_options: function(test) {
     test.expect(1);
 
-    var actual = grunt.file.read('tmp/inlinef');
+    var actual = grunt.file.read('tmp/inline-result');
     var expected = grunt.file.read('test/expected/inline_ex');
     test.equal(actual, expected, 'should describe what the default behavior is.');
 

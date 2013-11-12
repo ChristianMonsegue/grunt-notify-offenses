@@ -1,5 +1,5 @@
 /*
- *  grunt-notify-inline-css
+ *  grunt-notify-offenses
  *  https://github.com/christian.monsegue/gruntplugins
  *
  *  Licensed under the MIT license.
@@ -12,7 +12,7 @@ module.exports = function( grunt ) {
   // Please see the Grunt documentation for more information regarding task
   // creation: http://gruntjs.com/creating-tasks
 
-  grunt.registerMultiTask('notify_inline_offenses',
+  grunt.registerMultiTask('notify_offenses',
                           'Searches through a list of files and notifies on all declarative inline code.',
                           function() {
 
@@ -25,11 +25,12 @@ module.exports = function( grunt ) {
       stout: 'plaintext',
       output: 'plaintext',
       offenses: {
-        "CSS": {
+        'Style': {
           message: '',
           pattern: []
         },
-        "Align": {}
+        'Align': {},
+        'Javascript': []
       },
       force: true,
       override: false,
@@ -211,7 +212,7 @@ module.exports = function( grunt ) {
     *  on stored offense types.
     *
     *  Interface Finder {
-    *    find ( source, [items,]);
+    *    find ( path, source, [items,]);
     *  }
     *
     ***************************************************************************
@@ -227,18 +228,27 @@ module.exports = function( grunt ) {
       [
         {
           type: 'STYLE',
-          pattern: /style[\s\t]*=[\s\t]*(\"|\')[\s\ta-z0-9\-\:\;{}\\\/\(\)\+\=\&\%\#\@\!\,\$_\"\']*(\"|\')[\s\ta-z0-9\-\:\;{}\\\/\(\)\+\=\&\%\#\@\!\,\$_\"\']*>/gi,
-          message: 'Style attributes should belong in a .css or .less file.'
+          pattern: /style[\s\t]*=[\s\t]*(\"|\')[\s\ta-z0-9\-\:\;{}\\\/\(\)\+\=\&\%\#\@\!\,\.\$_\"\']*(\"|\')[\s\ta-z0-9\-\:\;{}\\\/\(\)\+\=\&\%\#\@\!\,\.\$_\"\']*>/gi,
+          message: 'Style attributes should belong in a .css or .less file.',
+          extensions: ['html']
         },
         {
           type: 'ALIGN',
-          pattern: /align[\s\t]*=[\s\t]*(\"|\')[\s\ta-z0-9\-\:\;{}\\\/\(\)\+\=\&\%\#\@\!\,\$_\"\']*(\"|\')[\s\ta-z0-9\-\:\;{}\\\/\(\)\+\=\&\%\#\@\!\,\$_\"\']*>/gi,
-          message: 'Align attributes should belong in a .css or .less file.'
+          pattern: /align[\s\t]*=[\s\t]*(\"|\')[\s\ta-z0-9\-\:\;{}\\\/\(\)\+\=\&\%\#\@\!\,\.\$_\"\']*(\"|\')[\s\ta-z0-9\-\:\;{}\\\/\(\)\+\=\&\%\#\@\!\,\.\$_\"\']*>/gi,
+          message: 'Align attributes should belong in a .css or .less file.',
+          extensions: ['html']
         },
         {
           type: 'JAVASCRIPT',
-          pattern: /on[a-z]*[\s\t]*=[\s\t]*(\"|\')[\s\ta-z0-9\-\:\;{}\\\/\(\)\+\=\&\%\#\@\!\,\$_\"\']*[\)|\;|\}](\"|\')[\s\ta-z0-9\-\:\;{}\\\/\(\)\+\=\&\%\#\@\!\,\$_\"\']*>/gi,
-          message: 'Inline Javascript should belong in a .js file.'
+          pattern: /on[a-z]*[\s\t]*=[\s\t]*(\"|\')[\s\ta-z0-9\-\:\;{}\\\/\(\)\+\=\&\%\#\@\!\,\.\$_\"\']*[\)|\;|\}](\"|\')[\s\ta-z0-9\-\:\;{}\\\/\(\)\+\=\&\%\#\@\!\,\.\$_\"\']*>/gi,
+          message: 'Inline Javascript should belong in a .js file.',
+          extensions: ['html']
+        },
+        {
+          type: 'CONSOLE LOG',
+          pattern: /console.log\(/gi,
+          message: 'Console Log declaration detected. Please remove once finished testing.',
+          extensions: ['js']
         }
       ];
 
@@ -248,6 +258,9 @@ module.exports = function( grunt ) {
       var overriding_types = [];
 
 
+      function makeLowerCase( element ) {
+              return element.toLowerCase();
+      }
       function doesTypeExist ( type ) {
         var index = 0,
             exists = false;
@@ -279,16 +292,16 @@ module.exports = function( grunt ) {
       function getMessage ( type ) {
         var index = 0,
             exists = false,
-            pattern = -1;
+            message = -1;
         while (index < pre_defined_offenses.length && !exists) {
           if(pre_defined_offenses[index].type.toUpperCase() ===
              type.toUpperCase()){
             exists = true;
-            pattern = pre_defined_offenses[index].message;
+            message = pre_defined_offenses[index].message;
           }
           index++;
         }
-        return pattern;
+        return message;
       }
 
       /* Retrieve modifiers from the user-defined regexp pattern.
@@ -362,9 +375,10 @@ module.exports = function( grunt ) {
       *
       *  returns      An array of offending column objects
       */
-      function findOffendingColumns ( line, type, pattern, message ) {
-          var defined_pattern,
-              result,
+      function findOffendingColumns ( line, type, pattern, message )
+        {
+          var result,
+              defined_pattern,
               defined_message = message,
               pattern_modifiers = ['g', 'i'],
               columns = [];
@@ -401,6 +415,7 @@ module.exports = function( grunt ) {
       *  offenses. Note that user-defined offense types are matched as
       *  case-insensitive, so "css" = "CSS".
       *
+      *  @param extension: the file extension of the currently processing file.
       *  @param line: A line in a file to be searched for offending columns.
       *  @param offenses [optional]: A list of objects or a single object that
       *                              a user provides with defined types and
@@ -409,20 +424,34 @@ module.exports = function( grunt ) {
       *  returns     An array of offending column objects containing the
       *              user-defined offenses and/or the pre-defined offenses.
       */
-      function createOffendingColumnsList ( line, offenses ) {
+      function createOffendingColumnsList ( extension, line, offenses ) {
         var merge_columns,
             columns = [];
         //If user-defined offenses are given, process those first
         if(offenses !== undefined) {
-          
           for (var type in offenses) {
             if (!offenses.hasOwnProperty(type)) { continue; }
-            merge_columns = findOffendingColumns(line,
+            /* Check if offenses has defined extensions and if not, search all
+            *  extensions by default.
+            */
+            if(offenses[type].extensions === undefined ||
+               offenses[type].extensions.length === 0){
+              merge_columns = findOffendingColumns(line,
                                                 type,
                                                 offenses[type].pattern || [],
                                                 offenses[type].message || ' ');
-            columns = columns.concat(merge_columns);
-          }
+              columns = columns.concat(merge_columns);
+            } else {
+              offenses[type].extensions.map(makeLowerCase);
+              //Check if the extension matches a user-defined extension.
+              if (offenses[type].extensions.indexOf(
+                                    extension.toLowerCase()) !== -1) {
+                merge_columns = findOffendingColumns(line,
+                                                type,
+                                                offenses[type].pattern || [],
+                                                offenses[type].message || ' ');
+                columns = columns.concat(merge_columns);
+              } } }
         }
         /* Default search for pre-defined offenses from the patterns object.
         *  This search only occurs if the user does not give user-defined
@@ -436,14 +465,16 @@ module.exports = function( grunt ) {
         if(offenses === undefined ||
           (offenses !== undefined && options.force)) {
           for (var j in pre_defined_offenses) {
-              if(overriding_types.indexOf(
-                      pre_defined_offenses[j].type.toUpperCase()) === -1) {
-                merge_columns = findOffendingColumns(line,
-                                              pre_defined_offenses[j].type,
-                                              pre_defined_offenses[j].pattern,
-                                              pre_defined_offenses[j].message);
-                columns = columns.concat(merge_columns);
-              }
+            if(overriding_types.indexOf(
+                    pre_defined_offenses[j].type.toUpperCase()) === -1 &&
+              pre_defined_offenses[j].extensions.indexOf(
+                                      extension.toLowerCase()) !== -1) {
+              merge_columns = findOffendingColumns(line,
+                                            pre_defined_offenses[j].type,
+                                            pre_defined_offenses[j].pattern,
+                                            pre_defined_offenses[j].message);
+              columns = columns.concat(merge_columns);
+            }
           }
         }
         overriding_types = [];
@@ -459,8 +490,8 @@ module.exports = function( grunt ) {
       }
 
       return {
-        find: function ( source, items ) {
-          return createOffendingColumnsList(source, items);
+        find: function ( path, source, items ) {
+          return createOffendingColumnsList(path, source, items);
         }
       };
 
@@ -531,13 +562,13 @@ module.exports = function( grunt ) {
         return cleaned_line;
       }
 
-      function assembleOffendingLine ( line, line_num, finder ) {
+      function assembleOffendingLine ( extension, line, line_num, finder ) {
         var trimmed_line,
             offending_line,
             offenses = Object.getOwnPropertyNames(options.offenses).length ===
                         0 ? undefined : options.offenses,
             offending_columns =
-                finder.find(line, offenses);
+                finder.find(extension, line, offenses);
         if(offending_columns.length > 0) {
           trimmed_line = trimmer(line);
           offending_line = new OffendingLine(trimmed_line, line_num);
@@ -565,6 +596,7 @@ module.exports = function( grunt ) {
               offending_columns,
               new_tab_line,
               tabwidth,
+              extension = file.path.split('.'),
               lines = file.data.split(linefeed),
               offending_file = new OffendingFile(file.path);
           for(var j in lines){
@@ -574,12 +606,14 @@ module.exports = function( grunt ) {
             new_tab_line = lines[j].replace(/^\t/,
                                          convertTabToTabWidth(tabwidth));
             if(new_tab_line.trim().length > 0) {
-                offending_line = assembleOffendingLine(new_tab_line,
-                                                       (+j) + 1,
-                                                       finder);
-                if(offending_line !== false) {
-                  offending_file.addElement(offending_line);
-                }
+              offending_line = 
+                  assembleOffendingLine(extension[extension.length - 1],
+                                        new_tab_line,
+                                        (+j) + 1,
+                                        finder);
+              if(offending_line !== false) {
+                offending_file.addElement(offending_line);
+              }
             } }
           return offending_file;
       }
@@ -1236,6 +1270,10 @@ module.exports = function( grunt ) {
     })();
 
     //Command to execute the gruntfile js functions.
+    console.log('hi')
+
+
+    ;
     Client.execute();
   });
 
