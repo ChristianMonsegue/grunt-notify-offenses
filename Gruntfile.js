@@ -33,20 +33,17 @@ module.exports = function(grunt) {
         options: {
           save: true,
           stout: 'decoratedplaintext',
-          output: 'json',
-          override: false,
+          output: 'minimalxml',
           offenses : {
-            "bloop": {
-              message: 'Erroneous attribute.',
-              pattern: ['bloop[\\s\\t]*=[\\s\\t]*(\"|\')[\\s\\ta-z0-9\\-\\:\\;{}\\/\\(\\)\\+\\=\\&\\%\\#\\@\\!\\,\\$_\"\']*(\"|\')', 'global', 'i']
+            "erroneous": {
+              message: 'Erroneous attribute detected. Please remove.',
+              pattern: ['erroneous[\\s\\t]*=[\\s\\t]*(\"|\')[\\s\\ta-z0-9\\-\\:\\;{}\\/\\(\\)\\+\\=\\&\\%\\#\\@\\!\\,\\$_\"\']*(\"|\')', 'global', 'i']
             }
           },
-          force: true,
-          tabwidth: 4,
-          cleaner: 'trailing'
+          force: true
         },
         files: {
-          'tmp/inline-result': ['test/fixtures/*.html']
+          'tmp/inline-result': ['test/fixtures/inline1.html','test/fixtures/noInline1.html']
         },
       }
     }

@@ -226,14 +226,19 @@ module.exports = function( grunt ) {
       var pre_defined_offenses =
       [
         {
-          type: 'CSS',
-          pattern: /style[\s\t]*=[\s\t]*(\"|\')[\s\ta-z0-9\-\:\;{}\\\/\(\)\+\=\&\%\#\@\!\,\$_\"\']*(\"|\')/gi,
+          type: 'STYLE',
+          pattern: /style[\s\t]*=[\s\t]*(\"|\')[\s\ta-z0-9\-\:\;{}\\\/\(\)\+\=\&\%\#\@\!\,\$_\"\']*(\"|\')[\s\ta-z0-9\-\:\;{}\\\/\(\)\+\=\&\%\#\@\!\,\$_\"\']*>/gi,
           message: 'Style attributes should belong in a .css or .less file.'
         },
         {
-          type: 'Align',
-          pattern: /align[\s\t]*=[\s\t]*(\"|\')[\s\ta-z0-9\-\:\;{}\\\/\(\)\+\=\&\%\#\@\!\,\$_\"\']*(\"|\')/gi,
+          type: 'ALIGN',
+          pattern: /align[\s\t]*=[\s\t]*(\"|\')[\s\ta-z0-9\-\:\;{}\\\/\(\)\+\=\&\%\#\@\!\,\$_\"\']*(\"|\')[\s\ta-z0-9\-\:\;{}\\\/\(\)\+\=\&\%\#\@\!\,\$_\"\']*>/gi,
           message: 'Align attributes should belong in a .css or .less file.'
+        },
+        {
+          type: 'JAVASCRIPT',
+          pattern: /on[a-z]*[\s\t]*=[\s\t]*(\"|\')[\s\ta-z0-9\-\:\;{}\\\/\(\)\+\=\&\%\#\@\!\,\$_\"\']*[\)|\;|\}](\"|\')[\s\ta-z0-9\-\:\;{}\\\/\(\)\+\=\&\%\#\@\!\,\$_\"\']*>/gi,
+          message: 'Inline Javascript should belong in a .js file.'
         }
       ];
 
@@ -632,7 +637,7 @@ module.exports = function( grunt ) {
       function parseLocation ( column_type,  column_num, column_message ) {
         var arrow_text = indentBy(2) + '-> ',
             location_text = 'C' + column_num,
-            attribute_loc = ' attribute located at column: ' + location_text +
+            attribute_loc = ' offense located at column: ' + location_text +
                             '.' + linefeed,
             message = indentBy(3) + column_message + linefeed;
         return arrow_text + column_type + attribute_loc + message;
@@ -702,7 +707,7 @@ module.exports = function( grunt ) {
       function parseLocation ( column_type, column_num, column_message ) {
         var arrow_text = indentBy(2) + ('-> ').yellow.bold,
             location_text = ('C' + column_num).white.bold,
-            attribute_loc = ' attribute located at column: ' + location_text +
+            attribute_loc = ' offense located at column: ' + location_text +
                             '.' + linefeed,
             message = indentBy(3) + (column_message).yellow.bold + linefeed;
         return arrow_text + column_type + attribute_loc + message;
