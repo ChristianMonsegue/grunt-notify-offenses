@@ -141,18 +141,6 @@ Default value: `4`
 
 Removes all tab characters at the beginning of each line from the file input and replace them with a new tabwidth, normalizing the data. It is highly recommended to equate the tabwidth to the tabwidth rule of jshint for full accuracy of the column numbers.
 
-#### cleaner
-Type: `String` _optional_
-Default value: `'trailing'`
-
-Cleans each line of the input file(s) of whitespaces based on a given option:
-
-* `'none'` Does not clean the line.
-* `'trailing'` Cleans the line of all whitespace at the beginning and end of the line.
-* `'no-tabs'` Cleans the line of all '\t' whitespace.
-* `'no-spaces'` Cleans the line of all '\s' whitespace.
-* `'all'` Cleans the line of _all_ whitespace.
-
 _____________________________
 ###Reporter Options
 
@@ -178,6 +166,18 @@ Determines how the output will be written to an output file.
 * `'minimalxml'` Outputs the results in a very basic XML format.
 * `'json'` Outputs the results in a JSON format that follows the ECMA5 standard.
 
+#### cleaner
+Type: `String` _optional_
+Default value: `'none'`
+
+Cleans each line of the output file(s) of whitespaces based on a given option:
+
+* `'none'` Does not clean each line.
+* `'trailing'` Cleans each line of all whitespace at the beginning and end of the line.
+* `'all-tabs'` Cleans each line of all '\t' whitespace.
+* `'all-spaces'` Cleans each line of all '\s' whitespace.
+* `'all'` Cleans each line of _all_ whitespace.
+
 ## Usage Examples
 
 ### Default Options
@@ -186,7 +186,7 @@ In this example, the default options are used to look for offenses in a set of f
 * Takes in the source file's filepath and data.
 * Rearranges all tab characters at the front of each line to a **tabwidth** of `4`.
 * Searches through the pre-defined list of offenses for any offending columns. Since no **offenses** were defined by the user and **override** is set to `false` and **force** is set to `true`, then the pre-defined offenses will all be checked and not overriden. Additonally, the plugin will search for offenses in **ALL** files since **extensions** was no defined.
-* The **cleaner** cleans each offending line of all `'trailing'` whitespace before sending them to the output (same as trim()).
+* The **cleaner** defaults to `'none'`, so it does not clean the lines of the output of any whitespace and keeps the default formatting.
 * Outputs the offending data to the standard output (**stout**) in `'plaintext'` format. Since **save** is set to `false`, the offending data will not be considered to be written to an output file and the **output** option and the destination is ignored.
 
 ```js
@@ -201,7 +201,7 @@ grunt.initConfig({
         offenses : {},
         force: true,
         tabwidth: 4,
-        cleaner: 'trailing'
+        cleaner: 'none'
       },
       files: {
         'tmp/inline-result': ['text/fixtures/inline1.html']

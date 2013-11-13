@@ -1,48 +1,48 @@
 { "inline-offenses": {
-  "offensive-files": [
-    {
-      "filepath": "test/fixtures/user-inline-1.html",
-      "offensive-line": [
-        {
-          "line-number": 7,
-          "offensive-column": [
-            {
-              "type": "ALIGN",
-              "column": 30,
-              "message": "Align attributes should belong in a .css or .less file."
-            },
-          ],
-          "line": "<pstyle="color:green;"align="center">Hello</p><pstyle='font-size:10;'>Ten</p>"
-        },
-        {
-          "line-number": 9,
-          "offensive-column": [
-            {
-              "type": "STYLE",
-              "column": 25,
-              "message": " "
-            },
-            {
-              "type": "ERRONEOUS",
-              "column": 25,
-              "message": "Erroneous attribute detected. Please remove."
-            },
-          ],
-          "line": "<pstyle="color:pink;"erroneous='err'>Hello</p><pstyle='font-size:10;'>Ten</p>"
-        },
-        {
-          "line-number": 11,
-          "offensive-column": [
-            {
-              "type": "JAVASCRIPT",
-              "column": 11,
-              "message": "Inline Javascript should belong in a .js file."
-            },
-          ],
-          "line": "<buttononclick='someFunc()'></button>"
-        },
-      ],
-      "total-offenses": 4
-    },
-  ]
+"offensive-files":[
+{
+"filepath":"test/fixtures/user-inline-1.html",
+"offensive-line":[
+{
+"line-number":7,
+"offensive-column":[
+{
+"type":"ALIGN",
+"column":30,
+"message":"Alignattributesshouldbelongina.cssor.lessfile."
+},
+],
+"line":"<pstyle="color:green;"align="center">Hello</p><pstyle='font-size:10;'>Ten</p>"
+},
+{
+"line-number":9,
+"offensive-column":[
+{
+"type":"STYLE",
+"column":25,
+"message":""
+},
+{
+"type":"ERRONEOUS",
+"column":25,
+"message":"Erroneousattributedetected.Pleaseremove."
+},
+],
+"line":"<pstyle="color:pink;"erroneous='err'>Hello</p><pstyle='font-size:10;'>Ten</p>"
+},
+{
+"line-number":11,
+"offensive-column":[
+{
+"type":"JAVASCRIPT",
+"column":11,
+"message":"InlineJavascriptshouldbelongina.jsfile."
+},
+],
+"line":"<buttononclick='someFunc()'></button>"
+},
+],
+"total-offenses":4
+},
+]
 } }

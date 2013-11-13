@@ -92,5 +92,22 @@ exports.notify_offenses = {
     test.equal(actual, expected, 'There should be only 2 user-defined STYLE offenses searched since the extension for style was overridden, all spaces in the offending lines should be removed, and output should be in JSON.');
 
     test.done();
+  },
+    checkJSONandXMLOutput: function( test ) {
+    test.expect(3);
+    
+    var actual = grunt.file.read('tmp/uco-json-no-inline-html');
+    var expected = grunt.file.read('tmp/user-xml-no-inline-html');
+    test.notEqual(actual, expected, 'These output files should be two completely different formats.');
+
+    actual = grunt.file.read('tmp/uco-json-inline-html');
+    expected = grunt.file.read('tmp/user-xml-inline-html');
+    test.notEqual(actual, expected, 'These output files should be two completely different formats.');
+
+    actual = grunt.file.read('tmp/uco-json-js-console-log');
+    expected = grunt.file.read('tmp/user-xml-js-console-log');
+    test.notEqual(actual, expected, 'These output files should be two completely different formats.');
+
+    test.done();
   }
 };

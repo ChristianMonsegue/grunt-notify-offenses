@@ -1,10 +1,10 @@
 { "inline-offenses": {
-  "offensive-files": [
-    {
-      "filepath": "test/fixtures/no-inline-1.html",
-      "offensive-line": [
-      ],
-      "total-offenses": 0
-    },
-  ]
+"offensive-files":[
+{
+"filepath":"test/fixtures/no-inline-1.html",
+"offensive-line":[
+],
+"total-offenses":0
+},
+]
 } }

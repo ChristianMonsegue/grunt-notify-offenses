@@ -28,7 +28,7 @@ module.exports = function(grunt) {
       tests: ['tmp']
     },
 
-    //Configuration to be run (and then tested)
+    //Default configuration with save set to true to write output to file.
     notify_offenses: {
       default_with_save_options: {
         options: {
@@ -41,6 +41,8 @@ module.exports = function(grunt) {
           'tmp/basic-inline-cbd': ['test/fixtures/basic-inline-1.cbd']
         }
       },
+      /*user - u, clean - c - all. override - o - true
+      Searches a user defined offense with global and case-insensitive flags and writes the output to a XML file.*/
       user_offense_to_xml: {
         options: {
           save: true,
@@ -60,7 +62,8 @@ module.exports = function(grunt) {
           'tmp/user-xml-inline-cfm': ['test/fixtures/user-inline-1.cfm']
         }
       },
-      //user - u, clean - c. override - o
+      /*user - u, clean - c - all. override - o - true
+      Searches a user defined offense with global and case-insensitive flags. Override is set to true, clean all lines of the outputs of all spaces and writes the output to a JSON file.*/
       uco_to_json: {
         options: {
           save: true,
@@ -74,7 +77,7 @@ module.exports = function(grunt) {
             },
             "erroneous": {
               message: 'Erroneous attribute detected. Please remove.',
-              pattern: ['erroneous[\\s\\t]*=[\\s\\t]*(\"|\')[\\s\\ta-z0-9\\-\\:\\;{}\\/\\(\\)\\+\\=\\&\\%\\#\\@\\!\\,\\$_\"\']*(\"|\')', 'global', 'i'],
+              pattern: ['erroneous[\\s\\t]*=[\\s\\t]*(\"|\')[\\s\\ta-z0-9\\-\\:\\;{}\\/\\(\\)\\+\\=\\&\\%\\#\\@\\!\\,\\$_\"\']*(\"|\')', 'g', 'i'],
               extensions: ['html']
             }
           }
