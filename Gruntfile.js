@@ -28,8 +28,8 @@ module.exports = function(grunt) {
       tests: ['tmp']
     },
 
-    //Default configuration with save set to true to write output to file.
     notify_offenses: {
+      //Default configuration with save set to true to write output to file.
       default_with_save_options: {
         options: {
           save: true
@@ -88,6 +88,7 @@ module.exports = function(grunt) {
           'tmp/uco-json-inline-cbd': ['test/fixtures/user-inline-1.cbd']
         }
       },
+      //README.md Usage Examples
       default_options: {
         options: {
           save: false,
@@ -161,9 +162,7 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-clean');
   grunt.loadNpmTasks('grunt-contrib-nodeunit');
 
-  // Whenever the "test" task is run, first clean the "tmp" dir, then run this
-  // plugin's task(s), then test the result.
-  //['clean', 'notify_offenses', 'nodeunit']
+ /* Whenever the "test" task is run, first clean the "tmp" dir, then run this plugin's task(s), then test the result.*/
   grunt.registerTask('test', 'Plugin Unit Tests', function () {
     grunt.task.run('clean');
     grunt.task.run('notify_offenses:default_with_save_options');
@@ -172,14 +171,20 @@ module.exports = function(grunt) {
     grunt.task.run('nodeunit');
   });
 
-  // By default, lint and run all tests.
-  grunt.registerTask('default', ['jshint', 'test']);
-
-  grunt.registerTask('examples', 'README Examples', function () {
+  /*Whenever the "examples" task is run, first cean the "tmp" dir, then run the list of notify-offenses specific tasks.*/
+  grunt.registerTask('doexamples', 'README Examples', function () {
     grunt.task.run('clean');
     grunt.task.run('notify_offenses:default_options');
     grunt.task.run('notify_offenses:only_user_to_xml');
     grunt.task.run('notify_offenses:type_subset_to_json');
   });
+
+  // By default, lint and run all tests.
+  grunt.registerTask('default', ['jshint', 'test']);
+
+  /*When "example" task is run, first lint the files and then run the "doexample" task.*/
+  grunt.registerTask('examples', ['jshint', 'doexamples']);
+
+
 
 };
