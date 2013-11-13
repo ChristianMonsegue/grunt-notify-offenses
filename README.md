@@ -64,7 +64,7 @@ Determines if the pre-defined offenses are also evaluated along with the user-de
 
 #### offenses
 Type: `Object Literal` _optional_
-Default value: `undefined`
+Default value: `{}`
 
 Contains each user-defined offense. The key of each entry is the offense type and the value is another object literal that contains a `String` message and an `Array` pattern. The pattern itself should have the regular expression at the first index, and at every subsequent index is a regex modifier.
 

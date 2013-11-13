@@ -1,0 +1,21 @@
+{ "inline-offenses": {
+  "offensive-files": [
+    {
+      "filepath": "test/fixtures/user-inline-1.cbd",
+      "offensive-line": [
+        {
+          "line-number": 9,
+          "offensive-column": [
+            {
+              "type": "STYLE",
+              "column": 25,
+              "message": " "
+            },
+          ],
+          "line": "<pstyle="color:pink;"erroneous='err'>Hello</p><pstyle='font-size:10;'>Ten</p>"
+        },
+      ],
+      "total-offenses": 1
+    },
+  ]
+} }

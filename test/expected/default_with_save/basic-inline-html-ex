@@ -1,0 +1,50 @@
+[Checking for offenses in file: test/fixtures/basic-inline-1.html]
+______________________________________________________
+Offenses located at line number: L7
+______________________________________________________
+    -> STYLE offense located at column: C8.
+      Style attributes should belong in a .css or .less file.
+    -> STYLE offense located at column: C61.
+      Style attributes should belong in a .css or .less file.
+    -> ALIGN offense located at column: C30.
+      Align attributes should belong in a .css or .less file.
+Offending line: <p style="color: green;" align="center">Hello</p>    <p style='font-size: 10;'>Ten</p>
+______________________________________________________
+
+
+
+______________________________________________________
+Offenses located at line number: L8
+______________________________________________________
+    -> STYLE offense located at column: C4.
+      Style attributes should belong in a .css or .less file.
+    -> STYLE offense located at column: C57.
+      Style attributes should belong in a .css or .less file.
+Offending line: <p style="color: green;">console.log(multiply(3, 4));<p style='font-size: 10;'>Ten</p>
+______________________________________________________
+
+
+
+______________________________________________________
+Offenses located at line number: L9
+______________________________________________________
+    -> STYLE offense located at column: C4.
+      Style attributes should belong in a .css or .less file.
+    -> STYLE offense located at column: C37.
+      Style attributes should belong in a .css or .less file.
+Offending line: <p style="color: pink;">Hello</p><p style='font-size: 10;'>Ten</p>
+______________________________________________________
+
+
+
+______________________________________________________
+Offenses located at line number: L11
+______________________________________________________
+    -> JAVASCRIPT offense located at column: C11.
+      Inline Javascript should belong in a .js file.
+Offending line: <button onclick='someFunc()'></button>
+______________________________________________________
+
+
+
+Number of Offenses: 8

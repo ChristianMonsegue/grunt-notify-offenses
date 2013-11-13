@@ -1,3 +1,5 @@
+//Console Log 1
+
 function multiply ( x, y ) {
   var res = 0;
   for (var i = 0; i < y; i++) {

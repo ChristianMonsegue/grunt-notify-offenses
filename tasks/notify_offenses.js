@@ -24,14 +24,7 @@ module.exports = function( grunt ) {
       save: false,
       stout: 'plaintext',
       output: 'plaintext',
-      offenses: {
-        'Style': {
-          message: '',
-          pattern: []
-        },
-        'Align': {},
-        'Javascript': []
-      },
+      offenses: {},
       force: true,
       override: false,
       tabwidth: 4,
@@ -230,19 +223,19 @@ module.exports = function( grunt ) {
           type: 'STYLE',
           pattern: /style[\s\t]*=[\s\t]*(\"|\')[\s\ta-z0-9\-\:\;{}\\\/\(\)\+\=\&\%\#\@\!\,\.\$_\"\']*(\"|\')[\s\ta-z0-9\-\:\;{}\\\/\(\)\+\=\&\%\#\@\!\,\.\$_\"\']*>/gi,
           message: 'Style attributes should belong in a .css or .less file.',
-          extensions: ['html']
+          extensions: ['html', 'cfm']
         },
         {
           type: 'ALIGN',
           pattern: /align[\s\t]*=[\s\t]*(\"|\')[\s\ta-z0-9\-\:\;{}\\\/\(\)\+\=\&\%\#\@\!\,\.\$_\"\']*(\"|\')[\s\ta-z0-9\-\:\;{}\\\/\(\)\+\=\&\%\#\@\!\,\.\$_\"\']*>/gi,
           message: 'Align attributes should belong in a .css or .less file.',
-          extensions: ['html']
+          extensions: ['html', 'cfm']
         },
         {
           type: 'JAVASCRIPT',
           pattern: /on[a-z]*[\s\t]*=[\s\t]*(\"|\')[\s\ta-z0-9\-\:\;{}\\\/\(\)\+\=\&\%\#\@\!\,\.\$_\"\']*[\)|\;|\}](\"|\')[\s\ta-z0-9\-\:\;{}\\\/\(\)\+\=\&\%\#\@\!\,\.\$_\"\']*>/gi,
           message: 'Inline Javascript should belong in a .js file.',
-          extensions: ['html']
+          extensions: ['html', 'cfm']
         },
         {
           type: 'CONSOLE LOG',
@@ -261,6 +254,7 @@ module.exports = function( grunt ) {
       function makeLowerCase( element ) {
               return element.toLowerCase();
       }
+
       function doesTypeExist ( type ) {
         var index = 0,
             exists = false;
@@ -465,10 +459,10 @@ module.exports = function( grunt ) {
         if(offenses === undefined ||
           (offenses !== undefined && options.force)) {
           for (var j in pre_defined_offenses) {
-            if(overriding_types.indexOf(
-                    pre_defined_offenses[j].type.toUpperCase()) === -1 &&
-              pre_defined_offenses[j].extensions.indexOf(
-                                      extension.toLowerCase()) !== -1) {
+            if((overriding_types.indexOf(
+                    pre_defined_offenses[j].type.toUpperCase()) === -1) &&
+              (pre_defined_offenses[j].extensions.indexOf(
+                                      extension.toLowerCase()) !== -1)) {
               merge_columns = findOffendingColumns(line,
                                             pre_defined_offenses[j].type,
                                             pre_defined_offenses[j].pattern,
@@ -566,7 +560,8 @@ module.exports = function( grunt ) {
         var trimmed_line,
             offending_line,
             offenses = Object.getOwnPropertyNames(options.offenses).length ===
-                        0 ? undefined : options.offenses,
+                        0 || options.offenses === undefined ?
+                        undefined : options.offenses,
             offending_columns =
                 finder.find(extension, line, offenses);
         if(offending_columns.length > 0) {
@@ -1079,7 +1074,7 @@ module.exports = function( grunt ) {
     **************************************************************************/
     var Reporter = (function () {
 
-      function reportParsedFiles ( dest, input, to_file ) {
+      function reportParsedFiles ( dest, input, to_file) {
         var parsed_file,
             output_file = '';
         while (input.hasNext()) {
@@ -1092,8 +1087,8 @@ module.exports = function( grunt ) {
         }
         input.resetPointer();
         if(to_file && dest.dest !== undefined) {
-          grunt.file.write(dest.dest, output_file);
-          grunt.log.writeln(('File "' + dest.dest + '" created.').white.bold);
+          grunt.file.write(dest.dest, output_file.trim());
+          grunt.log.writeln('---- ' + ('File "' + dest.dest + '" created.').white.bold + ' -----' + block_space);
         }
       }
 
@@ -1227,13 +1222,13 @@ module.exports = function( grunt ) {
       *  and/or default options of the gruntfile.
       */
       function run () {
+        undefinedToDefault();
+
         _self.files.forEach( function ( file_block ) {
           var assembled_files_collection,
               parsed_files_collection,
               input_files_collection = fileLoader(file_block);
           if(input_files_collection.getLength() > 0) {
-
-            undefinedToDefault();
 
             assembled_files_collection =
                   buildAssembledFilesCollection(input_files_collection);
@@ -1270,10 +1265,6 @@ module.exports = function( grunt ) {
     })();
 
     //Command to execute the gruntfile js functions.
-    console.log('hi')
-
-
-    ;
     Client.execute();
   });
 

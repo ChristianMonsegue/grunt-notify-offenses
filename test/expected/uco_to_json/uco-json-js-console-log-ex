@@ -1,0 +1,21 @@
+{ "inline-offenses": {
+  "offensive-files": [
+    {
+      "filepath": "test/fixtures/basic-console-log-1.js",
+      "offensive-line": [
+        {
+          "line-number": 11,
+          "offensive-column": [
+            {
+              "type": "CONSOLE LOG",
+              "column": 1,
+              "message": "Console Log declaration detected. Please remove once finished testing."
+            },
+          ],
+          "line": "console.log(multiply(3,4));"
+        },
+      ],
+      "total-offenses": 1
+    },
+  ]
+} }

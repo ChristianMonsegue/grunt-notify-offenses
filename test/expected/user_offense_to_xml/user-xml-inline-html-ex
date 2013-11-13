@@ -1,0 +1,67 @@
+<inlineOffenses>
+  <offensiveFile>
+    <filepath>"test/fixtures/user-inline-1.html"</filepath>
+    <offensiveLine>
+      <lineNumber>7</lineNumber>
+      <offensiveColumn>
+        <type>"STYLE"</type>
+        <column>8</column>
+        <message>Style attributes should belong in a .css or .less file.</message>
+      </offensiveColumn>
+      <offensiveColumn>
+        <type>"STYLE"</type>
+        <column>61</column>
+        <message>Style attributes should belong in a .css or .less file.</message>
+      </offensiveColumn>
+      <offensiveColumn>
+        <type>"ALIGN"</type>
+        <column>30</column>
+        <message>Align attributes should belong in a .css or .less file.</message>
+      </offensiveColumn>
+      <line>"<p style="color: green;" align="center">Hello</p>    <p style='font-size: 10;'>Ten</p>"</line>
+    </offensiveLine>
+    <offensiveLine>
+      <lineNumber>8</lineNumber>
+      <offensiveColumn>
+        <type>"STYLE"</type>
+        <column>4</column>
+        <message>Style attributes should belong in a .css or .less file.</message>
+      </offensiveColumn>
+      <offensiveColumn>
+        <type>"STYLE"</type>
+        <column>57</column>
+        <message>Style attributes should belong in a .css or .less file.</message>
+      </offensiveColumn>
+      <line>"<p style="color: green;">console.log(multiply(3, 4));<p style='font-size: 10;'>Ten</p>"</line>
+    </offensiveLine>
+    <offensiveLine>
+      <lineNumber>9</lineNumber>
+      <offensiveColumn>
+        <type>"ERRONEOUS"</type>
+        <column>25</column>
+        <message>Erroneous attribute detected. Please remove.</message>
+      </offensiveColumn>
+      <offensiveColumn>
+        <type>"STYLE"</type>
+        <column>4</column>
+        <message>Style attributes should belong in a .css or .less file.</message>
+      </offensiveColumn>
+      <offensiveColumn>
+        <type>"STYLE"</type>
+        <column>53</column>
+        <message>Style attributes should belong in a .css or .less file.</message>
+      </offensiveColumn>
+      <line>"<p style="color: pink;" erroneous='err'>Hello</p><p style='font-size: 10;'>Ten</p>"</line>
+    </offensiveLine>
+    <offensiveLine>
+      <lineNumber>11</lineNumber>
+      <offensiveColumn>
+        <type>"JAVASCRIPT"</type>
+        <column>11</column>
+        <message>Inline Javascript should belong in a .js file.</message>
+      </offensiveColumn>
+      <line>"<button onclick='someFunc()'></button>"</line>
+    </offensiveLine>
+    <totalOffenses>9</totalOffenses>
+  </offensiveFile>
+</inlineOffenses>

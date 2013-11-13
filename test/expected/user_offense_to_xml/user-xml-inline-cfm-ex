@@ -1,13 +1,8 @@
 <inlineOffenses>
   <offensiveFile>
-    <filepath>"test/fixtures/inline1.html"</filepath>
+    <filepath>"test/fixtures/user-inline-1.cfm"</filepath>
     <offensiveLine>
       <lineNumber>7</lineNumber>
-      <offensiveColumn>
-        <type>"ERRONEOUS"</type>
-        <column>46</column>
-        <message>Erroneous attribute detected. Please remove.</message>
-      </offensiveColumn>
       <offensiveColumn>
         <type>"STYLE"</type>
         <column>8</column>
@@ -15,7 +10,7 @@
       </offensiveColumn>
       <offensiveColumn>
         <type>"STYLE"</type>
-        <column>77</column>
+        <column>61</column>
         <message>Style attributes should belong in a .css or .less file.</message>
       </offensiveColumn>
       <offensiveColumn>
@@ -23,7 +18,7 @@
         <column>30</column>
         <message>Align attributes should belong in a .css or .less file.</message>
       </offensiveColumn>
-      <line>"<p style="color: green;" align="center"  Erroneous="hi">Hello</p>    <p style='font-size: 10;'>Ten</p>"</line>
+      <line>"<p style="color: green;" align="center">Hello</p>    <p style='font-size: 10;'>Ten</p>"</line>
     </offensiveLine>
     <offensiveLine>
       <lineNumber>8</lineNumber>
@@ -34,10 +29,10 @@
       </offensiveColumn>
       <offensiveColumn>
         <type>"STYLE"</type>
-        <column>42</column>
+        <column>57</column>
         <message>Style attributes should belong in a .css or .less file.</message>
       </offensiveColumn>
-      <line>"<p style="color: green;">Hello</p>    <p style='font-size: 10;'>Ten</p>"</line>
+      <line>"<p style="color: green;">console.log(multiply(3, 4));<p style='font-size: 10;'>Ten</p>"</line>
     </offensiveLine>
     <offensiveLine>
       <lineNumber>9</lineNumber>
@@ -48,10 +43,10 @@
       </offensiveColumn>
       <offensiveColumn>
         <type>"STYLE"</type>
-        <column>37</column>
+        <column>53</column>
         <message>Style attributes should belong in a .css or .less file.</message>
       </offensiveColumn>
-      <line>"<p style="color: pink;">Hello</p><p style='font-size: 10;'>Ten</p>"</line>
+      <line>"<p style="color: pink;" erroneous='err'>Hello</p><p style='font-size: 10;'>Ten</p>"</line>
     </offensiveLine>
     <offensiveLine>
       <lineNumber>11</lineNumber>
@@ -62,10 +57,6 @@
       </offensiveColumn>
       <line>"<button onclick='someFunc()'></button>"</line>
     </offensiveLine>
-    <totalOffenses>9</totalOffenses>
-  </offensiveFile>
-  <offensiveFile>
-    <filepath>"test/fixtures/noInline1.html"</filepath>
-    <totalOffenses>0</totalOffenses>
+    <totalOffenses>8</totalOffenses>
   </offensiveFile>
 </inlineOffenses>

@@ -1,0 +1,12 @@
+[Checking for offenses in file: test/fixtures/basic-console-log-1.js]
+______________________________________________________
+Offenses located at line number: L11
+______________________________________________________
+    -> CONSOLE LOG offense located at column: C1.
+      Console Log declaration detected. Please remove once finished testing.
+Offending line: console.log(multiply(3, 4));
+______________________________________________________
+
+
+
+Number of Offenses: 1
