@@ -41,8 +41,7 @@ module.exports = function(grunt) {
           'tmp/basic-inline-cbd': ['test/fixtures/basic-inline-1.cbd']
         }
       },
-      /*user - u, clean - c - all. override - o - true
-      Searches a user defined offense with global and case-insensitive flags and writes the output to a XML file.*/
+      /*Searches a user defined offense with global and case-insensitive flags and writes the output to a XML file.*/
       user_offense_to_xml: {
         options: {
           save: true,

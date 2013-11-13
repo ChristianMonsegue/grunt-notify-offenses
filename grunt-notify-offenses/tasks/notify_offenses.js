@@ -57,6 +57,13 @@ module.exports = function( grunt ) {
       return indent;
     }
 
+    /* Helper function to 'clean' a line of whitespaces based on a given
+    *  cleaner option value or the default value.
+    *
+    *  @param amount: The line to clean.
+    *
+    *  returns        The 'cleaned' line based on the given option.
+    */
     function cleaner ( line ) {
       var cleaner_option = options.cleaner || 'default';
       var cleaned_line = line;
@@ -557,16 +564,14 @@ module.exports = function( grunt ) {
       }
 
       function assembleOffendingLine ( extension, line, line_num, finder ) {
-        var trimmed_line,
-            offending_line,
+        var offending_line,
             offenses = Object.getOwnPropertyNames(options.offenses).length ===
                         0 || options.offenses === undefined ?
                         undefined : options.offenses,
             offending_columns =
                 finder.find(extension, line, offenses);
         if(offending_columns.length > 0) {
-          trimmed_line = line.trim();
-          offending_line = new OffendingLine(trimmed_line, line_num);
+          offending_line = new OffendingLine(line.trim(), line_num);
           for (var i in offending_columns) {
                     offending_line.addElement(offending_columns[i]);
           }
