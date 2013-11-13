@@ -822,8 +822,8 @@ module.exports = function( grunt ) {
                         '"</type>') + linefeed,
             col_tag = cleaner(indentBy(4) + '<column>' + column_num +
                       '</column>') + linefeed,
-            msg_tag = cleaner(indentBy(4) + '<message>' + column_message +
-                      '</message>') + linefeed,
+            msg_tag = cleaner(indentBy(4) + '<message>"' + column_message +
+                      '"</message>') + linefeed,
             offense_tag = cleaner(indentBy(3) + '<offensiveColumn>') +
                           linefeed + type_tag + col_tag + msg_tag +
                           cleaner(indentBy(3) + '</offensiveColumn>') +
@@ -1089,6 +1089,7 @@ module.exports = function( grunt ) {
       function reportParsedFiles ( dest, input, to_file) {
         var parsed_file,
             output_file = '';
+        if(!to_file){ grunt.log.write(linefeed); }
         while (input.hasNext()) {
           parsed_file = input.getNext();
           if(to_file) {

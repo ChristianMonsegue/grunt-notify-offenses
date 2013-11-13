@@ -2,7 +2,7 @@
 
 > Searches through a list of files and notifies on all declarative inline offenses.
 
-![Running with user-defined offenses](images/run-screenshot.jpg) 
+![Running with user-defined offenses](images/title-screenshot.jpg) 
 
 ## Getting Started
 This plugin requires Grunt `~0.4.1`
@@ -116,18 +116,23 @@ The extensions array uses the user-defined `String` extensions to compare to the
 
 #####List of Pre-Defined Offenses
 
-* `'STYLE'` Searches for inline _style_ offenses in a file. This search is _case-insensitive_ and _global_ and only searches through \*.html files.
+* `'STYLE'` Searches for inline _style_ offenses in a file. This search is _case-insensitive_ and _global_ and only searches through \*.html and \*.cfm files.
 > **<p align='center'\>Paragraph</p\>**
 
     ...is an offense.
 
-* `'ALIGN'` Searches for inline _align_ offenses in a file. This search is _case-insensitive_ and _global_ and only searches through \*.html files.
+* `'ALIGN'` Searches for inline _align_ offenses in a file. This search is _case-insensitive_ and _global_ and only searches through \*.html and \*.cfm files.
 > **<p style='color: green;'\>Paragraph</p\>**
 
     ...is an offense.
 
-* `'JAVASCRIPT'` Searches for inline _javascript_ offenses in a file. This search is _case-insensitive_ and _global_ and only searches through \*.html files.
+* `'JAVASCRIPT'` Searches for inline _javascript_ offenses in a file. This search is _case-insensitive_ and _global_ and only searches through \*.html and \*.cfm files.
 > **<button onclick='someFunction()'\>Button</button\>**
+
+    ...is an offense.
+
+* `'CONSOLE LOG'` Searches for _console\.log_ offenses in a file. This search is _case-insensitive_ and _global_ and only searches through \*.js files.
+> **console.log('Message');**
 
     ...is an offense.
 
@@ -181,7 +186,7 @@ Cleans each line of the output file(s) of whitespaces based on a given option:
 ## Usage Examples
 
 ### Default Options
-In this example, the default options are used to look for offenses in a set of files. So with `'tmp/inline-result'` as my destination and `'test/fixtures/inline1.html'` as my source, the plugin does the following:
+In this example, the default options are used to look for offenses in a set of files. So with `'tmp/example-default-result'` as my destination and `'test/fixtures/inline-1.html'` as my source, the plugin does the following:
 
 * Takes in the source file's filepath and data.
 * Rearranges all tab characters at the front of each line to a **tabwidth** of `4`.
@@ -192,7 +197,7 @@ In this example, the default options are used to look for offenses in a set of f
 ```js
 grunt.initConfig({
   notify_offenses: {
-    default: {
+    default_options: {
       options: {
         save: false,
         stout: 'plaintext',
@@ -204,53 +209,59 @@ grunt.initConfig({
         cleaner: 'none'
       },
       files: {
-        'tmp/inline-result': ['text/fixtures/inline1.html']
-      },
+        'tmp/example-default-result': ['test/fixtures/inline-1.html']
+      }
     }
   }
-})
+});
 ```
 
+![Running default_options example](images/default-options-screenshot.jpg)
+
 ### Only User-Defined Offenses From \*.html Files Written to File in XML Format
-In this example, the user only wants their defined offenses to be considered and then have the output written to a file. So with `'tmp/inline-result'` as my destination and `'test/fixtures/inline1.html'` as my source, the plugin does the following:
+In this example, the user only wants their defined offenses to be considered and then have the output written to a file. So with `'tmp/example-user-result'` as my destination and `'test/fixtures/inline-1.html'` as my source, the plugin does the following:
 
 * Takes in the source file's filepath and data.
 * Searches through the user-defined offenses first since there are defined **offenses** by the user. Since **extensions** is defined in **offenses** and has an extension `html`, then **ONLY** \*.html files will be searched.
 * Since **override** is set to `true` and **force** is set to `false`, then not only would the pre-defined offenses be overriden, but they will also not be checked (_Note: the exception is that if there is a user-defined offense that only has a type name and nothing else, then it will default to the matching type in the pre-defined offenses if it exists_). In this case, as "Style" exists as a pre-defined offense, then the pre-defined "Style" will be overriden and the user-defined offense will take its place in the results.
-* Outputs the offending data to the standard output in the default `'plaintext'` format. Since **save** is set to `true` and **output** is set to `'minimalxml'`, the offending data will be written to the `'tmp/inline-result'` file (the file will be created if it does not exist) in the XML format.
+* Outputs the offending data to the standard output in the default `'plaintext'` format. Since **save** is set to `true` and **output** is set to `'minimalxml'`, the offending data will be written to the `'tmp/example-user-result'` file (the file will be created if it does not exist) in the XML format.
 
 ```js
 grunt.initConfig({
   notify_offenses: {
-    default: {
+    only_user_to_xml: {
       options: {
         save: true,
         output: 'minimalxml',
         override: true,
         offenses : {
-          "Style": {
-            message: "message",
-            pattern: ['pattern, 'modifier'],
+          'Style': {
+            message: 'Style is overriden and now looks for the "img src=\'\'" attribute with flags global and case-insentive in extension .html',
+            pattern: ['img[\\s\\t]*src[\\s\\t]*\\=[\\s\\t]*(\'|\")', 'global', 'i'],
             extensions: ['html']
           },
-          "Unique-Offense": {
-            message: "message.",
-            pattern: ['pattern', 'modifier', 'modifier'],
+          "erroneous": {
+            message: 'Searches for the user-defined offense "erroneous" with flags global and case-insentive in extensions .html',
+            pattern: ['erroneous[\\s\\t]*=[\\s\\t]*(\"|\')[\\s\\ta-z0-9\\-\\:\\;{}\\/\\(\\)\\+\\=\\&\\%\\#\\@\\!\\,\\$_\"\']*(\"|\')', 'g', 'i'],
             extensions: ['html']
           }
         },
         force: false
       },
       files: {
-        'tmp/inline-result': ['text/fixtures/inline1.html']
-      },
+        'tmp/example-user-result': ['test/fixtures/inline-1.html']
+      }
     }
   }
-})
+});
 ```
 
+![Running only_user_to_xml example](images/only-user-to-xml-screenshot.jpg)
+
+![Output File of only-user-to-xml example](images/xml-output-screenshot.jpg)
+
 ### Only Offense Type Subset to Standard Output in JSON
-In the _Offense Type Subset_ configuration, the plugin will **only** search for matching types between the pre-defined and user-defined offenses, given that **offenses** is not empty and consists of only matching types. The pattern used is determined by if the user-defined offense is fully defined or not. So with `'tmp/inline-result'` as my destination and `'test/fixtures/inline1.html'` as my source, the plugin does the following:
+In the _Offense Type Subset_ configuration, the plugin will **only** search for matching types between the pre-defined and user-defined offenses, given that **offenses** is not empty and consists of only matching types. The pattern used is determined by if the user-defined offense is fully defined or not. So with `'tmp/example-subset-result'` as my destination and `'test/fixtures/inline-1.html'` as my source, the plugin does the following:
 
 * Takes in the source file's filepath and data.
 * Searches through the user-defined offenses first since there are defined **offenses** by the user. Additonally, the plugin will search for offenses in **ALL** files since **extensions** was no defined.
@@ -262,26 +273,28 @@ In the _Offense Type Subset_ configuration, the plugin will **only** search for 
 ```js
 grunt.initConfig({
   notify_offenses: {
-    default: {
+    type_subset_to_json: {
       options: {
         stout: 'json',
         override: true,
         offenses : {
-          "Style": [],
-          "ALIGN": {
-            message: "message.",
-            pattern: ['pattern', 'modifier', 'modifier']
+          'Style': [],
+          'ALIGN': {
+            message: 'New ALIGN Message showing that ALIGN is overriden.',
+            pattern: ['align[\\s\\t]*=[\\s\\t]*(\'|\")', 'g', 'i']
           }
         },
         force: false
       },
       files: {
-        'tmp/inline-result': ['text/fixtures/inline1.html']
-      },
+        'tmp/example-subset-result': ['test/fixtures/inline-1.html']
+      }
     }
   }
-})
+});
 ```
+
+![Running type_subset_to_json example](images/type-subset-to-json-screenshot.jpg)
 
 ##In Progress and Consideration
 All items of this list are ordered by greatest importance to least importance.

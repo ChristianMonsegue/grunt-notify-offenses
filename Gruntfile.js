@@ -87,6 +87,61 @@ module.exports = function(grunt) {
           'tmp/uco-json-js-console-log': ['test/fixtures/basic-console-log-1.js'],
           'tmp/uco-json-inline-cbd': ['test/fixtures/user-inline-1.cbd']
         }
+      },
+      default_options: {
+        options: {
+          save: false,
+          stout: 'plaintext',
+          output: 'plaintext',
+          override: false,
+          offenses: {},
+          force: true,
+          tabwidth: 4,
+          cleaner: 'none'
+        },
+        files: {
+          'tmp/example-default-result': ['test/fixtures/inline-1.html']
+        }
+      },
+      only_user_to_xml: {
+        options: {
+          save: true,
+          output: 'minimalxml',
+          override: true,
+          offenses : {
+            'Style': {
+              message: 'Style is overriden and now looks for the "img src=\'\'" attribute with flags global and case-insentive in extension .html',
+              pattern: ['img[\\s\\t]*src[\\s\\t]*\\=[\\s\\t]*(\'|\")', 'global', 'i'],
+              extensions: ['html']
+            },
+            "erroneous": {
+              message: 'Searches for the user-defined offense "erroneous" with flags global and case-insentive in extensions .html',
+              pattern: ['erroneous[\\s\\t]*=[\\s\\t]*(\"|\')[\\s\\ta-z0-9\\-\\:\\;{}\\/\\(\\)\\+\\=\\&\\%\\#\\@\\!\\,\\$_\"\']*(\"|\')', 'g', 'i'],
+              extensions: ['html']
+            }
+          },
+          force: false
+        },
+        files: {
+          'tmp/example-user-result': ['test/fixtures/inline-1.html']
+        }
+      },
+      type_subset_to_json: {
+        options: {
+          stout: 'json',
+          override: true,
+          offenses : {
+            'Style': [],
+            'ALIGN': {
+              message: 'New ALIGN Message showing that ALIGN is overriden.',
+              pattern: ['align[\\s\\t]*=[\\s\\t]*(\'|\")', 'g', 'i']
+            }
+          },
+          force: false
+        },
+        files: {
+          'tmp/example-subset-result': ['test/fixtures/inline-1.html']
+        }
       }
     },
 
@@ -108,9 +163,23 @@ module.exports = function(grunt) {
 
   // Whenever the "test" task is run, first clean the "tmp" dir, then run this
   // plugin's task(s), then test the result.
-  grunt.registerTask('test', ['clean', 'notify_offenses', 'nodeunit']);
+  //['clean', 'notify_offenses', 'nodeunit']
+  grunt.registerTask('test', 'Plugin Unit Tests', function () {
+    grunt.task.run('clean');
+    grunt.task.run('notify_offenses:default_with_save_options');
+    grunt.task.run('notify_offenses:user_offense_to_xml');
+    grunt.task.run('notify_offenses:uco_to_json');
+    grunt.task.run('nodeunit');
+  });
 
   // By default, lint and run all tests.
   grunt.registerTask('default', ['jshint', 'test']);
+
+  grunt.registerTask('examples', 'README Examples', function () {
+    grunt.task.run('clean');
+    grunt.task.run('notify_offenses:default_options');
+    grunt.task.run('notify_offenses:only_user_to_xml');
+    grunt.task.run('notify_offenses:type_subset_to_json');
+  });
 
 };
