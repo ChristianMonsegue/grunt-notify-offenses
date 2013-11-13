@@ -300,4 +300,4 @@ All items of this list are ordered by greatest importance to least importance.
 
 
 ## Release History
-* **0.1.0**  -  11 November 2013  - First version, although I would argue that it is incredibly messy right now.
+* **0.1.00**  -  11 November 2013  - First version **alpha** phase, although I would argue that it is incredibly messy right now.
