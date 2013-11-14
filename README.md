@@ -12,10 +12,10 @@ If you haven't used [Grunt](http://gruntjs.com/) before, be sure to check out th
 Pull down the plugins from the repository into your current working directory:
 
 ```shell
-git clone git@github.com:kinnser/gruntplugins.git
+git clone git@github.com:ChristianMonsegue/grunt-notify-offenses.git
 ```
 
-...or download the ZIP file from [Kinnser Grunt Plugins Repo](https://github.com/kinnser/gruntplugins).
+...or download the ZIP file from [the repository](https://github.com/ChristianMonsegue/grunt-notify-offenses).
 
 Move the grunt-notify-offenses folder into the node_modules folder that resides in the same directory of your Gruntfile.
 
