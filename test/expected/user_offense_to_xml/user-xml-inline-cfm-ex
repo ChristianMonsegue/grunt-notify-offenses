@@ -1,4 +1,4 @@
-<inlineOffenses>
+<offenses>
   <offensiveFile>
     <filepath>"test/fixtures/user-inline-1.cfm"</filepath>
     <offensiveLine>
@@ -6,17 +6,17 @@
       <offensiveColumn>
         <type>"STYLE"</type>
         <column>8</column>
-        <message>Style attributes should belong in a .css or .less file.</message>
+        <message>"Style attributes should belong in a .css or .less file."</message>
       </offensiveColumn>
       <offensiveColumn>
         <type>"STYLE"</type>
         <column>61</column>
-        <message>Style attributes should belong in a .css or .less file.</message>
+        <message>"Style attributes should belong in a .css or .less file."</message>
       </offensiveColumn>
       <offensiveColumn>
         <type>"ALIGN"</type>
         <column>30</column>
-        <message>Align attributes should belong in a .css or .less file.</message>
+        <message>"Align attributes should belong in a .css or .less file."</message>
       </offensiveColumn>
       <line>"<p style="color: green;" align="center">Hello</p>    <p style='font-size: 10;'>Ten</p>"</line>
     </offensiveLine>
@@ -25,12 +25,12 @@
       <offensiveColumn>
         <type>"STYLE"</type>
         <column>4</column>
-        <message>Style attributes should belong in a .css or .less file.</message>
+        <message>"Style attributes should belong in a .css or .less file."</message>
       </offensiveColumn>
       <offensiveColumn>
         <type>"STYLE"</type>
         <column>57</column>
-        <message>Style attributes should belong in a .css or .less file.</message>
+        <message>"Style attributes should belong in a .css or .less file."</message>
       </offensiveColumn>
       <line>"<p style="color: green;">console.log(multiply(3, 4));<p style='font-size: 10;'>Ten</p>"</line>
     </offensiveLine>
@@ -39,12 +39,12 @@
       <offensiveColumn>
         <type>"STYLE"</type>
         <column>4</column>
-        <message>Style attributes should belong in a .css or .less file.</message>
+        <message>"Style attributes should belong in a .css or .less file."</message>
       </offensiveColumn>
       <offensiveColumn>
         <type>"STYLE"</type>
         <column>53</column>
-        <message>Style attributes should belong in a .css or .less file.</message>
+        <message>"Style attributes should belong in a .css or .less file."</message>
       </offensiveColumn>
       <line>"<p style="color: pink;" erroneous='err'>Hello</p><p style='font-size: 10;'>Ten</p>"</line>
     </offensiveLine>
@@ -53,10 +53,10 @@
       <offensiveColumn>
         <type>"JAVASCRIPT"</type>
         <column>11</column>
-        <message>Inline Javascript should belong in a .js file.</message>
+        <message>"Inline Javascript should belong in a .js file."</message>
       </offensiveColumn>
       <line>"<button onclick='someFunc()'></button>"</line>
     </offensiveLine>
     <totalOffenses>8</totalOffenses>
   </offensiveFile>
-</inlineOffenses>
+</offenses>

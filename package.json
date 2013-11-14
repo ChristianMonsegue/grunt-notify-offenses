@@ -1,23 +1,23 @@
 {
   "name": "grunt-notify-offenses",
-  "description": "Searches through a list of files and notifies on all declarative inline offenses.",
-  "version": "0.1.0",
-  "homepage": "https://github.com/christian.monsegue/gruntplugins",
+  "description": "Searches through a list of files and notifies on all declarative offenses.",
+  "version": "0.1.00",
+  "homepage": "https://github.com/kinnser/gruntplugins",
   "author": {
     "name": "Christian Monsegue",
     "email": "christian.monsegue@kinnser.com"
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/christian.monsegue/gruntplugins.git"
+    "url": "git://github.com/kinnser/gruntplugins.git"
   },
   "bugs": {
-    "url": "https://github.com/christian.monsegue/gruntplugins/issues"
+    "url": "https://github.com/kinnser/gruntplugins/issues"
   },
   "licenses": [
     {
       "type": "MIT",
-      "url": "https://github.com/christian.monsegue/gruntplugins/blob/master/LICENSE-MIT"
+      "url": "https://github.com/kinnser/gruntplugins/blob/master/LICENSE-MIT"
     }
   ],
   "main": "Gruntfile.js",
@@ -37,6 +37,6 @@
     "grunt": "~0.4.1"
   },
   "keywords": [
-    "inline-offenses"
+    "notify-offenses"
   ]
 }

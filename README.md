@@ -1,19 +1,25 @@
 # grunt-notify-offenses
 
-> Searches through a list of files and notifies on all declarative inline offenses.
+> Searches through a list of files and notifies on all declarative offenses.
 
 ![Running with user-defined offenses](images/title-screenshot.jpg) 
 
 ## Getting Started
 This plugin requires Grunt `~0.4.1`
 
-If you haven't used [Grunt](http://gruntjs.com/) before, be sure to check out the [Getting Started](http://gruntjs.com/getting-started) guide, as it explains how to create a [Gruntfile](http://gruntjs.com/sample-gruntfile) as well as install and use Grunt plugins. Once you're familiar with that process, you may install this plugin with this command:
+If you haven't used [Grunt](http://gruntjs.com/) before, be sure to check out the [Getting Started](http://gruntjs.com/getting-started) guide, as it explains how to create a [Gruntfile](http://gruntjs.com/sample-gruntfile) as well as install and use Grunt plugins. Once you're familiar with that process, follow the instructions below to install the plugin:
+
+Pull down the plugins from the repository into your current working directory:
 
 ```shell
-npm install grunt-notify-offenses --save-dev
+git clone git@github.com:kinnser/gruntplugins.git
 ```
 
-Once the plugin has been installed, it may be enabled inside your Gruntfile with this line of JavaScript:
+...or download the ZIP file from [Kinnser Grunt Plugins Repo](https://github.com/kinnser/gruntplugins).
+
+Move the grunt-notify-offenses folder into the node_modules folder that resides in the same directory of your Gruntfile.
+
+The grunt-notify-offenses plugin may be enabled inside your Gruntfile with this line of JavaScript:
 
 ```js
 grunt.loadNpmTasks('grunt-notify-offenses');
@@ -117,19 +123,19 @@ The extensions array uses the user-defined `String` extensions to compare to the
 #####List of Pre-Defined Offenses
 
 * `'STYLE'` Searches for inline _style_ offenses in a file. This search is _case-insensitive_ and _global_ and only searches through \*.html and \*.cfm files.
-> **<p align='center'\>Paragraph</p\>**
+> **align='center'**
 
-    ...is an offense.
+    ...as an attribute in a HTML tag is an offense.
 
 * `'ALIGN'` Searches for inline _align_ offenses in a file. This search is _case-insensitive_ and _global_ and only searches through \*.html and \*.cfm files.
-> **<p style='color: green;'\>Paragraph</p\>**
+> **style='color: green;'**
 
-    ...is an offense.
+    ...as an attribute in an HTML tag is an offense.
 
 * `'JAVASCRIPT'` Searches for inline _javascript_ offenses in a file. This search is _case-insensitive_ and _global_ and only searches through \*.html and \*.cfm files.
-> **<button onclick='someFunction()'\>Button</button\>**
+> **onclick='someFunction()'**
 
-    ...is an offense.
+    ...as an attribute in an HTML tag is an offense.
 
 * `'CONSOLE LOG'` Searches for _console\.log_ offenses in a file. This search is _case-insensitive_ and _global_ and only searches through \*.js files.
 > **console.log('Message');**
@@ -313,4 +319,5 @@ All items of this list are ordered by greatest importance to least importance.
 
 
 ## Release History
-* **0.1.00**  -  11 November 2013  - First version **alpha** phase, although I would argue that it is incredibly messy right now.
+* **0.1.01**  -  13 November 2013  - Added some support for user-defined parsers.
+* **0.1.00**  -  11 November 2013  - First version **alpha** phase, although arguably it is incredibly messy right now.

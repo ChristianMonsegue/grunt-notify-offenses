@@ -1,4 +1,4 @@
-<inlineOffenses>
+<offenses>
   <offensiveFile>
     <filepath>"test/fixtures/basic-console-log-1.js"</filepath>
     <offensiveLine>
@@ -6,10 +6,10 @@
       <offensiveColumn>
         <type>"CONSOLE LOG"</type>
         <column>1</column>
-        <message>Console Log declaration detected. Please remove once finished testing.</message>
+        <message>"Console Log declaration detected. Please remove once finished testing."</message>
       </offensiveColumn>
       <line>"console.log(multiply(3, 4));"</line>
     </offensiveLine>
     <totalOffenses>1</totalOffenses>
   </offensiveFile>
-</inlineOffenses>
+</offenses>

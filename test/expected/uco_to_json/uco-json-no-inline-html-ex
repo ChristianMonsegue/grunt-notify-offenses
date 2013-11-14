@@ -1,4 +1,4 @@
-{ "inline-offenses": {
+{"offenses":{
 "offensive-files":[
 {
 "filepath":"test/fixtures/no-inline-1.html",
@@ -7,4 +7,4 @@
 "total-offenses":0
 },
 ]
-} }
+}}

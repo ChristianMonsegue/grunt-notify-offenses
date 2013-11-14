@@ -1,6 +1,6 @@
-<inlineOffenses>
+<offenses>
   <offensiveFile>
     <filepath>"test/fixtures/no-inline-1.html"</filepath>
     <totalOffenses>0</totalOffenses>
   </offensiveFile>
-</inlineOffenses>
+</offenses>
