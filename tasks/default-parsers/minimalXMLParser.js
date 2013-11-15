@@ -59,6 +59,14 @@ function cleaner ( line ) {
   return cleaned_line;
 }
 
+//----------------------
+function initialize ( grunt_init, options ) {
+  grunt = grunt_init;
+  linefeed = grunt.util.linefeed;
+  block_space = linefeed + linefeed + linefeed;
+  if(typeof options.cleaner === 'string') { clean = options.cleaner; }
+}
+
 function parseStart () {
   var start_file_tag = '<offenses>' + linefeed;
   return start_file_tag;
@@ -118,13 +126,12 @@ function parseEnd () {
   var end_file_tag = '</offenses>' + linefeed;
   return end_file_tag;
 }
+//----------------------
+
 
 //INTERFACE
-exports.init = function ( grunt_init, options ) {
-  grunt = grunt_init;
-  linefeed = grunt.util.linefeed;
-  block_space = linefeed + linefeed + linefeed;
-  if(typeof options.cleaner === 'string') { clean = options.cleaner; }
+exports.init = function ( grunt, options ) {
+  initialize(grunt, options);
 };
 
 exports.parseStart = function () {

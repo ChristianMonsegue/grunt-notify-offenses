@@ -1,6 +1,11 @@
 //Advised to put all options getters here.
 var grunt;
 
+function initialize ( grunt_init, options ) {
+  grunt = grunt_init;
+  /*Get whatever option values you want here from options.option and also initialize anything that uses the grunt API here.*/
+}
+
 function parseStart () {
   //The top of the offenses output.
   return;
@@ -42,12 +47,11 @@ function parseEnd () {
   return;
 }
 
-//INTERFACE
 
-//exports.init can be ignored, as it's only available for those who want access to grunt operations and the gruntfile options.
-exports.init = function ( grunt_init, options ) {
-  grunt = grunt_init;
-  //Get whatever option values you want here from options.option
+//INTERFACE
+//exports.init can be ignored, as it's only available for those who want access to the grunt API and the gruntfile options.
+exports.init = function ( grunt, options ) {
+  initialize(grunt, options);
 };
 
 exports.parseStart = function () {

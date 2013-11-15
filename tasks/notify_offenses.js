@@ -31,7 +31,8 @@ module.exports = function( grunt ) {
       cleaner: 'none'
     });
 
-    var collectionFactory = require('./collectionFactory');
+    //Factory for creating collections and their derivatives.
+    var collectionFactory = require('./classes/collection');
 
 
     /**************************************************************************
@@ -56,7 +57,6 @@ module.exports = function( grunt ) {
     finder.init(grunt, options);
 
 
-
     /**************************************************************************
     ***************************************************************************
     ***************************************************************************
@@ -79,7 +79,6 @@ module.exports = function( grunt ) {
     **************************************************************************/
     var assembler = require('./OffendingFileDataAssembler');
     assembler.init(grunt, options);
-
 
 
     /**************************************************************************
@@ -132,8 +131,6 @@ module.exports = function( grunt ) {
     var reader = require('./offendingFilesReader');
 
 
-
-
     /**************************************************************************
     ***************************************************************************
     ***************************************************************************
@@ -153,8 +150,6 @@ module.exports = function( grunt ) {
     **************************************************************************/
     var reporter =  require('./defaultReporter');
     reporter.init(grunt, options);
-
-
 
 
     /**************************************************************************

@@ -1,8 +1,18 @@
+'use strict';
+
 var grunt,
     save = false;
 
+//Variables to be used later for formatting output.
 var linefeed,
     block_space;
+
+function initialize( grunt_init, options ) {
+  grunt = grunt_init;
+  linefeed = grunt.util.linefeed;
+  block_space = linefeed + linefeed + linefeed;
+  if (typeof options.save === 'boolean') { save = options.save; }
+}
 
 function reportParsedFiles ( dest, input, to_file) {
   var parsed_file,
@@ -23,11 +33,10 @@ function reportParsedFiles ( dest, input, to_file) {
   }
 }
 
-exports.init = function ( grunt_init, options ) {
-  grunt = grunt_init;
-  linefeed = grunt.util.linefeed;
-  block_space = linefeed + linefeed + linefeed;
-  if (typeof options.save === 'boolean') { save = options.save; }
+
+//INTERFACE
+exports.init = function ( grunt, options ) {
+  initialize(grunt, options);
 };
 
 exports.report = function ( destination, input, to_file ) {

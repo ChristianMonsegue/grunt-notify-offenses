@@ -4,50 +4,26 @@ var grunt,
     force = true,
     override = false;
 
-/* OffendingColumn "class" for creating OffendingColumn objects that
-*  contains the type column number and message. These objects are later
-*  stored in an OffendingLine object as a collection. If a parameter is
-*  undefined, the class will give its variables a default value.
-*
-*  @param type: The type of the offense starting at the column.
-*  @param column: The column number where the offense begins.
-*  @param message:  The message that gives additional information about
-*                   the offense.
-*/
-function OffendingColumn ( type, column, message ) {
-  this._type = type || 'No type defined';
-  this._column = column || -1;
-  this._message = typeof message === 'string' ?
-                  message : ' ';
-}
-OffendingColumn.prototype.getOffenseType = function () {
-  return this._type;
-};
-OffendingColumn.prototype.getColumnNumber = function () {
-  return this._column;
-};
-OffendingColumn.prototype.getMessage = function () {
-  return this._message.toString();
-};
 
-
-var loader = require('./preDefinedOffenses');
+//Factory for creating offending columns.
+var offendingColumnsFactory = require('./classes/offendingColumn');
 
 /* Holds objects with key type and pattern in a collection as search
 *  criteria for offenses.
 */
-var pre_defined_offenses = loader.getPreDefinedOffenses();
+var pre_defined_offenses = require('./preDefinedOffenses').getPreDefinedOffenses();
 
 /* A list of offense types that will override the pre-defined offenses
 *  given that the override options is set to true.
 */
 var overriding_types = [];
 
-//Force option. Defaults to true.
-var force = true;
 
-//Override option. Defaults to false.
-var override = false;
+function initialize ( grunt_init, options ) {
+  grunt = grunt_init;
+  if(typeof options.force === 'boolean') { force = options.force; }
+  if(typeof options.override === 'boolean') { override = options.override; }
+}
 
 
 function makeLowerCase( element ) {
@@ -130,9 +106,10 @@ function removeDuplicates ( columns ) {
   }
   for(var type in no_duplicates) {
     col_data = type.split('&~:__:~&');
-    no_dup_cols.push(new OffendingColumn(col_data[0],
-                                        col_data[1],
-                                        no_duplicates[type]));
+    no_dup_cols.push(offendingColumnsFactory.
+                     createOffendingColumn(col_data[0],
+                                          col_data[1],
+                                          no_duplicates[type]));
   }
   return no_dup_cols;
 }
@@ -195,9 +172,10 @@ function findOffendingColumns ( line, type, pattern, message )
       }
     }
     while ( (result = defined_pattern.exec(line)) ) {
-          columns.push(new OffendingColumn(type.toUpperCase(),
-                                            result.index + 1,
-                                            defined_message));
+          columns.push(offendingColumnsFactory.
+                        createOffendingColumn(type.toUpperCase(),
+                                              result.index + 1,
+                                              defined_message));
     }
     return columns;
   }
@@ -283,10 +261,8 @@ function createOffendingColumnsList ( extension, line, offenses ) {
 }
 
 //INTERFACE
-exports.init = function ( grunt_init, options ) {
-  grunt = grunt_init;
-  if(typeof options.force === 'boolean') { force = options.force; }
-  if(typeof options.override === 'boolean') { override = options.override; }
+exports.init = function ( grunt, options ) {
+  initialize(grunt, options);
 };
 
 exports.find = function ( path, source, items ) {

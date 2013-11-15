@@ -113,7 +113,6 @@ function OffendingLine ( line, line_num ) {
 OffendingLine.prototype = new Collection();
 
 
-//INTERFACE
 exports.createCollection = function ( array ) {
   return new Collection(array);
 };

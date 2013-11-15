@@ -31,6 +31,7 @@ var pre_defined_offenses =
   }
 ];
 
+
 exports.getPreDefinedOffenses = function () {
   return pre_defined_offenses;
 };

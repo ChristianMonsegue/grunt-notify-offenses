@@ -185,6 +185,4 @@ module.exports = function(grunt) {
   /*When "example" task is run, first lint the files and then run the "doexample" task.*/
   grunt.registerTask('examples', ['jshint', 'doexamples']);
 
-
-
 };

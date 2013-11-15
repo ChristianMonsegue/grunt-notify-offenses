@@ -1,23 +1,45 @@
 'use strict';
 
-var tabwidth = 4,
-    offenses = {},
-    collectionFactory = require('./collectionFactory'),
-    grunt;
+var grunt,
+    tabwidth = 4,
+    offenses = {};
 
-/* Helper function to convert all tab indentation into spaces equivalent
-*  to the tab width based on the indentation option. This works in
-*  tandem with the indentation option of JSHint so columns will be
-*  calculated based on a correctly linted file.
-*
-*  @param chars: The number of \s characters to set the tab width ton
-*/
-function convertTabToTabWidth ( chars ) {
-  var spaces_in_tabwidth = '';
-  for (var i = 0; i < chars; i++) {
-    spaces_in_tabwidth += ' ';
+//Factory for creating collections and their derivatives.
+var collectionFactory = require('./classes/collection');
+
+
+function initialize ( grunt_init, options ) {
+  grunt = grunt_init;
+  if (typeof options.tabwidth === 'number') { tabwidth = options.tabwidth; }
+  if (Object.getOwnPropertyNames(options.offenses).length > 0 ||
+      options.offenses !== undefined) {
+    offenses = options.offenses;
   }
-  return spaces_in_tabwidth;
+}
+
+function convertTabToTabWidth ( chars, line ) {
+  var new_tab_line,
+      current_char,
+      spaces_in_tabwidth = '',
+      firstChar = false,
+      it = 0,
+      spacetab = /[^\s\t]/,
+      allSpaces = '';
+  for (var i = 0; i < chars; i++) {
+    spaces_in_tabwidth += " ";
+  }
+  while(it < line.length && !firstChar){
+    current_char = line.charAt(it);
+    if (spacetab.test(current_char)) {
+      firstChar = true;
+    } else {
+      allSpaces += current_char;
+      it++;
+    }
+  }
+  allSpaces = allSpaces.replace(/\t/g, spaces_in_tabwidth);
+  new_tab_line = allSpaces + line.slice(it);
+  return new_tab_line;
 }
 
 function assembleOffendingLine ( extension, line, line_num, finder ) {
@@ -50,14 +72,12 @@ function assembleOffendingFile ( file, finder ) {
     var offending_line,
         offending_columns,
         new_tab_line,
-        tabwidth,
         extension = file.path.split('.'),
         lines = file.data.split(grunt.util.linefeed),
         offending_file = collectionFactory.createOffendingFile(file.path);
     for(var j in lines){
       //Converts all tab indentations into the specified tab width
-      new_tab_line = lines[j].replace(/^\t/,
-                                   convertTabToTabWidth(tabwidth));
+      new_tab_line = convertTabToTabWidth(tabwidth, lines[j]);
       if(new_tab_line.trim().length > 0) {
         offending_line = 
             assembleOffendingLine(extension[extension.length - 1],
@@ -71,14 +91,10 @@ function assembleOffendingFile ( file, finder ) {
     return offending_file;
 }
 
+
 //INTERFACE
-exports.init = function( grunt_init, options ) {
-  grunt = grunt_init;
-  if (typeof options.tabwidth === 'number') { tabwidth = options.tabwidth; }
-  if (Object.getOwnPropertyNames(options.offenses).length > 0 ||
-      options.offenses !== undefined) {
-    offenses = options.offenses;
-  }
+exports.init = function( grunt, options ) {
+  initialize(grunt, options);
 };
 
 exports.assemble = function ( base, operator) {

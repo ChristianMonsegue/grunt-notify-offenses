@@ -1,6 +1,7 @@
 'use strict';
 
-var collectionFactory = require('./collectionFactory');
+//Factory for creating collections and their derivatives.
+var collectionFactory = require('./classes/collection');
 
 function readEachColumn ( offending_line, parser ) {
   var offending_column,
@@ -48,8 +49,8 @@ function readEachLine ( offending_file, parser ) {
 }
 
 function readEachFile ( assembled_files_collection, parser ) {
-  var parsed_files_collection = collectionFactory.createCollection(),
-      parsed_file;
+  var parsed_file,
+      parsed_files_collection = collectionFactory.createCollection();
   parsed_files_collection.addElement(parser.parseStart());
   while (assembled_files_collection.hasNext()){
       parsed_file = readEachLine(assembled_files_collection.getNext(),
@@ -60,6 +61,7 @@ function readEachFile ( assembled_files_collection, parser ) {
   parsed_files_collection.addElement(parser.parseEnd());
   return parsed_files_collection;
 }
+
 
 //INTERFACE
 exports.read = function ( input, parser ) {

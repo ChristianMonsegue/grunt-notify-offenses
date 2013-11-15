@@ -59,6 +59,15 @@ function cleaner ( line ) {
   return cleaned_line;
 }
 
+
+//----------------------
+function initialize ( grunt_init, options ) {
+  grunt = grunt_init;
+  linefeed = grunt.util.linefeed;
+  block_space = linefeed + linefeed + linefeed;
+  if(typeof options.cleaner === 'string') { clean = options.cleaner; }
+}
+
 function bracket ( indent, brace ) {
   return cleaner(indentBy(indent) + brace) + linefeed;
 }
@@ -122,13 +131,12 @@ function parseEnd () {
   var offensive_files_close = cleaner(indentBy(1) + ']') + linefeed;
   return offensive_files_close + cleaner('} }') + linefeed;
 }
+//----------------------
+
 
 //INTERFACE
-exports.init = function ( grunt_init, options ) {
-  grunt = grunt_init;
-  linefeed = grunt.util.linefeed;
-  block_space = linefeed + linefeed + linefeed;
-  if(typeof options.cleaner === 'string') { clean = options.cleaner; }
+exports.init = function ( grunt, options ) {
+  initialize(grunt, options);
 };
 
 exports.parseStart = function () {
