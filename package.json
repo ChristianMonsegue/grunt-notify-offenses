@@ -1,7 +1,7 @@
 {
   "name": "grunt-notify-offenses",
   "description": "Searches through a list of files and notifies on all declarative offenses.",
-  "version": "0.1.00",
+  "version": "0.1.01",
   "homepage": "https://github.com/kinnser/gruntplugins",
   "author": {
     "name": "Christian Monsegue",

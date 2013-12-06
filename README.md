@@ -12,10 +12,10 @@ If you haven't used [Grunt](http://gruntjs.com/) before, be sure to check out th
 Pull down the plugins from the repository into your current working directory:
 
 ```shell
-git clone git@github.com:ChristianMonsegue/grunt-notify-offenses.git
+git clone git@github.com:kinnser/gruntplugins.git
 ```
 
-...or download the ZIP file from [the repository](https://github.com/ChristianMonsegue/grunt-notify-offenses).
+...or download the ZIP file from [Kinnser Grunt Plugins Repo](https://github.com/kinnser/gruntplugins).
 
 Move the grunt-notify-offenses folder into the node_modules folder that resides in the same directory of your Gruntfile.
 
@@ -28,18 +28,20 @@ grunt.loadNpmTasks('grunt-notify-offenses');
 ## The "notify_offenses" task
 
 ### Overview
-In your project's Gruntfile, add a section named `notify_offenses` to the data object passed into `grunt.initConfig()`.
+In your project's Gruntfile, add an object named `notify_offenses` to the data object passed into `grunt.initConfig()`. Inside `notify_offenses`, be sure to create another defined obejct to hold a specified notify offenses run.
 
 ```js
 grunt.initConfig({
   notify_offenses: {
-    options: {
-      // Task-specific options go here.
-    },
-    files: {
-      // Target-specific file lists and/or options go here.
-    },
-  },
+    [NAME OF SPECIFIED RUN]: {
+      options: {
+        // Task-specific options go here.
+      },
+      files: {
+        // Target-specific file lists and/or options go here.
+      }
+    }
+  }
 })
 ```
 
